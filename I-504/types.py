@@ -11,5 +11,5 @@ class TwCookie:
         }
 
 class CoreConfig: # システムのConfig
-    def __init__(self, tw_cookie: TwCookie, hoge:str):
+    def __init__(self, tw_cookie: TwCookie):
         self.tw_cookie: TwCookie = tw_cookie
