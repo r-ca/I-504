@@ -1,5 +1,4 @@
 # Types
-
 class TwCookie:
     def __init__(self, ct0:str, auth_token:str):
         self.ct0 = ct0
@@ -11,3 +10,6 @@ class TwCookie:
             "auth_token": self.auth_token
         }
 
+class CoreConfig: # システムのConfig
+    def __init__(self, tw_cookie: TwCookie, hoge:str):
+        self.tw_cookie: TwCookie = tw_cookie
