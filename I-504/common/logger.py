@@ -22,6 +22,9 @@ class Logger:
     def fatal(self, msg:str):
         print(f"[FATAL] {self.tag}:\t {msg}")
 
+    def child(self, child_tag:str):
+        return Logger(f"{self.tag}/{child_tag}")
+
 
 
 
