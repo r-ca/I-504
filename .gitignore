@@ -1,3 +1,8 @@
 # venv
 venv
 
+# pycache
+/I-504/__pycache__/*
+
+# Cookie
+/I-504/config/cookie/*
