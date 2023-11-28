@@ -1,5 +1,10 @@
-from twitter.account import Account
+from .types import *
+from .interface.system import *
+from .common.config_loader import *
+from .common.logger import Logger
+from .main import main
 
-account = Account(cookies="./I-504/config/cookie/cookie_.json")
+def entry():
+    entry_logger = Logger("entry")
 
-account.tweet("Cookieテスト")
+    main()
