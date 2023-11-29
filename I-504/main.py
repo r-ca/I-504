@@ -22,9 +22,9 @@ def init():
     init_logger.info("CoreConfig: Loaded")
 
     # TEST
-    from .common.dest.misskey.actions import StubMisskeyActions
+    from .common.dest.misskey.actions import MisskeyActions
 
-    misskeyActions = StubMisskeyActions(coreConfig)
+    misskeyActions = MisskeyActions(coreConfig)
 
     from .debug.mkdriver import mk_post
     

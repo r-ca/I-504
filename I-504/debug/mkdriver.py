@@ -13,7 +13,7 @@ def mk_post(misskeyActions: IDestinationActions):
     mk_logger.info("mk_post: Initializing the system")
 
     post_data = PostData(origin="@test", content="Hello, world!")
-    meta_data = MisskeyMetaData(visibility=MisskeyVisibility.public, instance_address="https://misskey.xyz", token="test")
+    meta_data = MisskeyMetaData(visibility=MisskeyVisibility.public, instance_address="https://62ki.net", token="tokennnnnnnnnnnnnnnnnnnnnnnn")
 
 
 
