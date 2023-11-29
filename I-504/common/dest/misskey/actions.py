@@ -5,7 +5,7 @@ from ....common.logger import Logger
 
 logger = Logger("misskey")
 
-class MisskeyActions(IDestination):
+class MisskeyActions(IDestinationActions):
     def __init__(self, config:CoreConfig):
         self.config = config # TODO: あとでなんとかする
 
@@ -18,8 +18,12 @@ class MisskeyActions(IDestination):
 
         return 200
 
+    def get_info(self) -> dict:
+        get_logger = logger.child("get_info")
+        
 
-class StubMisskeyActions(IDestination):
+
+class StubMisskeyActions(IDestinationActions):
     def __init__(self, config:CoreConfig):
         self.config = config # TODO: あとでなんとかする
 
@@ -35,3 +39,11 @@ class StubMisskeyActions(IDestination):
         post_logger.debug("meta_data.visibility: {}, meta_data.instance_address: {}, meta_data.token: {}".format(post_req_data.meta_data.visibility, post_req_data.meta_data.instance_address, post_req_data.meta_data.token))
 
         return 200
+
+    def get_info(self):
+        get_logger = logger.child("get_info")
+
+        get_logger.debug("Args: ")
+        get_logger.debug("self.config: {}".format(self.config))
+
+    

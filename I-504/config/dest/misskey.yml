@@ -1,0 +1,7 @@
+## Misskey config
+
+target_instance: "https://62ki.net"
+token: "xxxxxxxxxxxxxxxxxxxxx"
+default_visibility: "home"
+
+
