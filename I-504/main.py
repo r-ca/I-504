@@ -18,12 +18,17 @@ def init():
     
     coreConfig = YamlConfigLoader("./I-504/config/config.yml").load() 
 
+    init_logger.info("CoreConfig: Loaded")
+
+    # TEST
+    from .common.dest.misskey.actions import MisskeyActions
+
+    misskeyActions = MisskeyActions(coreConfig)
+
+    # TEST
+    print(misskeyActions.check_connection())
 
 
-    # scraper = Scraper(cookies="./I-504/config/cookie/cookie_.json")
 
-
-    # tweets = scraper.tweets_and_replies([1267154527750258689], limit=1)
-    # print(tweets)
 
 
