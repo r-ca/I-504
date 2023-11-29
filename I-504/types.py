@@ -1,4 +1,6 @@
 # Types
+import abc
+
 class TwCookie:
     def __init__(self, ct0:str, auth_token:str):
         self.ct0 = ct0
@@ -38,3 +40,34 @@ class CoreConfig: # システムのConfig
     def __init__(self, db_settings: DBSettings ,tw_cookie: TwCookie):
         self.db_settings: DBSettings = db_settings
         self.tw_cookie: TwCookie = tw_cookie
+
+class MisskeyVisibility:
+    public = "public"
+    home = "home"
+    followers = "followers"
+    specified = "specified"
+    private = "private"
+
+class PostData:
+    def __init__(self, origin:str, content:str):
+        self.origin = origin
+        self.content = content
+
+class IPostData(metaclass=abc.ABCMeta)
+    @abc.abstractmethod
+    def __init__(self, post_data:PostData, meta_data:MetaData):
+        post_data:PostData = post_data
+        meta_data:MetaData = meta_data
+
+class MetaData(metaclass=abc.ABCMeta):
+
+class MisskeyMetaData(MetaData):
+    def __init__(self, visibility:MisskeyVisibility, instance_address:str, token:str):
+        self.visibility: MisskeyVisibility = visibility
+        self.instance_address: str = instance_address
+        self.token: str = token
+
+class MisskeyPostData(IPostData):
+    def __init__(self, post_data:PostData, meta_data:MisskeyMetaData):
+        self.post_data:PostData = post_data
+        self.meta_data:MisskeyMetaData = meta_data
