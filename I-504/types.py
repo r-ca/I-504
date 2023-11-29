@@ -52,19 +52,17 @@ class MetaData(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __init__(self):
         pass
-    
+
 class PostData:
     def __init__(self, origin:str, content:str):
         self.origin = origin
         self.content = content
 
-class IPostData(metaclass=abc.ABCMeta):
+class IPostReqData(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def __init__(self, post_data:PostData, meta_data:MetaData):
         post_data:PostData = post_data
         meta_data:MetaData = meta_data
-
-
 
 class MisskeyMetaData(MetaData):
     def __init__(self, visibility:MisskeyVisibility, instance_address:str, token:str):
@@ -72,7 +70,7 @@ class MisskeyMetaData(MetaData):
         self.instance_address: str = instance_address
         self.token: str = token
 
-class MisskeyPostData(IPostData):
+class MisskeyPostReqData(IPostReqData):
     def __init__(self, post_data:PostData, meta_data:MisskeyMetaData):
         self.post_data:PostData = post_data
         self.meta_data:MisskeyMetaData = meta_data

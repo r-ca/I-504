@@ -8,5 +8,5 @@ class IDestination(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def post(self, post_data:PostData, meta_data:MetaData) -> int: # 投稿
+    def post(self, post_req_data:IPostReqData) -> int: # 投稿
         pass

@@ -21,12 +21,14 @@ def init():
     init_logger.info("CoreConfig: Loaded")
 
     # TEST
-    from .common.dest.misskey.actions import MisskeyActions
+    from .common.dest.misskey.actions import StubMisskeyActions
 
-    misskeyActions = MisskeyActions(coreConfig)
+    misskeyActions = StubMisskeyActions(coreConfig)
 
-    # TEST
-    print(misskeyActions.check_connection())
+    from .debug.mkdriver import mk_post
+    
+    mk_post(misskeyActions)
+
 
 
 
