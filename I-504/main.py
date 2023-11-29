@@ -16,15 +16,14 @@ def init():
     # Load the config
     init_logger.info("Loading the config")
     
-    coreConfig = JsonConfigLoader("./I-504/config/cookie/cookie_.json").load() #TODO:　Configのローダー全体的になんとかする
-
-    print(coreConfig.tw_cookie.ct0)
-    print(coreConfig.tw_cookie.auth_token)
-
-    scraper = Scraper(cookies="./I-504/config/cookie/cookie_.json")
+    coreConfig = YamlConfigLoader("./I-504/config/config.yml").load() 
 
 
-    tweets = scraper.tweets_and_replies([1267154527750258689], limit=1)
-    print(tweets)
+
+    # scraper = Scraper(cookies="./I-504/config/cookie/cookie_.json")
+
+
+    # tweets = scraper.tweets_and_replies([1267154527750258689], limit=1)
+    # print(tweets)
 
 
