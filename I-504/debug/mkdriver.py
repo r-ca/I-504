@@ -1,6 +1,6 @@
 # MisskeyPostドライバ
 
-from ..types import *
+from ..types.dest.misskey import *
 from ..interface.system import *
 from ..interface.dest import *
 from ..common.logger import Logger

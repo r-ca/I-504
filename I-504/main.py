@@ -2,7 +2,7 @@ from .common.logger import Logger
 from twitter.scraper import Scraper
 from .common.config_loader import *
 from .common.config.mk_loader import *
-from .types import *
+
 
 logger = Logger("main")
 def main():

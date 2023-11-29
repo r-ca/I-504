@@ -1,6 +1,7 @@
 ## Destination interface
 import abc
 from ..types import *
+from ..types.dest.interface import *
 
 class IDestinationActions(metaclass=abc.ABCMeta):
     @abc.abstractmethod

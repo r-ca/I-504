@@ -1,4 +1,4 @@
-from ..types import *
+from ..types.common import *
 from ..interface.system import *
 import json
 
