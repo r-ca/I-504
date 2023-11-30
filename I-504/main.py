@@ -1,7 +1,8 @@
 from .common.logger import Logger
 from twitter.scraper import Scraper
-from .common.config_loader import *
-from .common.config.mk_loader import *
+from .common.config.source.tw_loader import *
+from .common.config.core_loader import *
+from .source.twitter.actions import *
 
 
 logger = Logger("main")
@@ -19,21 +20,16 @@ def init():
     
     coreConfig = YamlConfigLoader("./I-504/config/config.yml").load() 
 
-    init_logger.info("CoreConfig: Loaded")
+    init_logger.succ("Loaded Core Config")
 
-    # TEST
-    from .common.dest.misskey.actions import MisskeyActions
+    twitterSourceConfig = TwitterSourceConfigLoader("./I-504/config/source/twitter.yml").load()
 
-    misskeyActions = MisskeyActions(coreConfig)
+    twitterActions = TwitterActions(tw_cookie=twitterSourceConfig.auth_cookie, update_limit=twitterSourceConfig.update_limit, target_user_rest_id=1267154527750258689)
 
-    from .debug.mkdriver import mk_post
-    
-    mk_post(misskeyActions)
+    tweets = twitterActions.get_tweets()
 
-    mkconfig = MisskeyConfigLoader("./I-504/config/dest/misskey.yml").load()
+    print(type(tweets))
+    print(len(tweets))
 
-    init_logger.info("MisskeyConfig: Loaded")
-    init_logger.debug("MisskeyConfig: {}".format(mkconfig))
-
-
-
+    for tweet in tweets:
+        print(tweet.entry_id + ": " + tweet.full_text)

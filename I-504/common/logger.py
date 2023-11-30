@@ -10,6 +10,9 @@ class Logger:
         if is_debug:
             print(f"[DEBUG] {self.tag}:\t {msg}")
 
+    def succ(self, msg:str):
+        print(f"[SUCC] {self.tag}:\t {msg}")
+
     def info(self, msg:str):
         print(f"[INFO] {self.tag}:\t {msg}")
 

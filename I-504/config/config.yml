@@ -5,12 +5,18 @@ db_settings:
   db_config:
     db_name: "db.sqlite3"
 
-## Origin settings
-twitter_auth_settings:
-  load_from_file: true
-  file_path: "./I-504/config/cookie/cookie_.json"
+# Sources
+source_list:
+  twitter:
+    enabled: true
+    conf_path: "I-504/config/source/twitter.yml"
+  test:
+    enabled: false
+    conf_path: "I-504/config/source/test.yml"
 
-## Destination settings
-misskey_auth_settings:
-  load_from_file: true
-  file_path: "./I-504/config/dest/misskey.yml"
+# Destinations
+dest_list:
+  misskey:
+    enabled: true
+    conf_path: "I-504/config/dest/misskey.yml"
+

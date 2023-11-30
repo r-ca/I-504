@@ -1,4 +1,5 @@
 from .source.twitter import *
+import abc
 
 class IDBConfig:
     def getConfig(self) -> dict:
@@ -24,7 +25,23 @@ class SqliteConfig(IDBConfig):
             "db_name": self.db_name
         }
 
+class CoreConfigTargets:
+    def __init__(self, enabled:bool, conf_path:str):
+        self.enabled = enabled
+        self.conf_path = conf_path
+
+
 class CoreConfig: # システムのConfig
-    def __init__(self, db_settings: DBSettings ,tw_cookie: TwCookie):
-        self.db_settings: DBSettings = db_settings
-        self.tw_cookie: TwCookie = tw_cookie
+    def __init__(self, db_settings: DBSettings, source_list: dict, dest_list: dict):
+        self.db_settings = db_settings
+        self.source_list = source_list
+        self.dest_list = dest_list
+
+class TargetTypes:
+    sns = "sns"
+    blog = "blog" # TODO
+    web = "web" # TODO
+    portal = "portal" # TODO
+    news = "news" # TODO
+
+
