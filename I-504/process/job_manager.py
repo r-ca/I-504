@@ -19,8 +19,6 @@ class JobManager:
     def __init__(self, pipe:Connection, engine:Engine):
         self.pipe:Connection = pipe
         self.engine:Engine = engine
-
-
         # Logger
         self.job_m_logger = Logger("JobMgr")
 
@@ -204,6 +202,9 @@ class JobManager:
         # WAITING_DEPENDの依存ジョブをチェック
         # TODO
 
+class DbLock:
+    """複数Sessionを同時に確立することがないように読み書きを管理する"""
+
 class InternalUtils:
     """内部で使用するユーティリティ"""
     def calc_next_run_time(job_interval: JobInterval):
@@ -234,15 +235,13 @@ class InternalUtils:
                 )
                 Session = sessionmaker(bind=engine)
                 session = Session()
+
                 session.add(new_queue)
-                session.commit()
-                session.close()
             else:
-                pass # 繰り返し実行しないジョブ
+                Session = sessionmaker(bind=engine)
+                session = Session()
 
             # 実行に成功したキューを削除
-            Session = sessionmaker(bind=engine)
-            session = Session()
             session.delete(queue)
             session.commit()
             session.close()
