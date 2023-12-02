@@ -19,6 +19,11 @@ import uuid
 
 from multiprocessing import Pipe, Process
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from .db_model.base import Base
+
 import time
 
 from queick import JobQueue
@@ -42,7 +47,13 @@ def main():
     # パイプの作成
     pipe, child_pipe = Pipe()
 
-    job_manager = JobManager(pipe=child_pipe)
+    engine = create_engine("sqlite:///./db.sqlite3", echo=True)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    Base.metadata.create_all(engine)
+
+    job_manager = JobManager(pipe=child_pipe, engine=engine)
 
     job_manager_process = Process(target=job_manager.run, args=())
 
@@ -68,7 +79,7 @@ def main():
     pipe.send(JobManagerRequest(
         job_req_type=JobReqType.REGISTER,
         job_req_body=JobReqBody_Register(
-            job_id=uuid.uuid4(),
+            job_id=uuid.uuid4().__str__(),
             job=Job(
                 job_meta=JobMeta(
                     job_name="test_job",

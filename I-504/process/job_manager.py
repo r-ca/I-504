@@ -2,11 +2,21 @@ from ..common.logger import Logger
 from multiprocessing import Pipe
 from multiprocessing.connection import Connection
 from ..types.job import *
+from ..db_model.job_queue import *
 import pickle
+from datetime import datetime
+from datetime import timedelta
+
+from sqlalchemy import Engine
+from sqlalchemy.orm import sessionmaker
+
+import json
 
 class JobManager:
-    def __init__(self, pipe:Connection):
+    def __init__(self, pipe:Connection, engine:Engine):
         self.pipe:Connection = pipe
+        self.engine:Engine = engine
+
 
         # Logger
         self.job_m_logger = Logger("JobMgr")
@@ -45,15 +55,15 @@ class JobManager:
                     self.job_m_logger.error("Unknown request received.")
             # 型一致エラー
             except TypeError as e:
-                self.job_m_logger.error("Received request is not JobManagerRequest type.")
+                self.job_m_logger.error("Type error occured.")
                 self.job_m_logger.error(f"Error: {e}")
             # その他のエラー
             except Exception as e:
                 self.job_m_logger.error(f"Unknown error occured: {e}")
 
     def job_register(self, job_id: str, job: Job):
-        # Stub
         logger = self.job_m_logger.child("job_register")
+
         logger.debug("Job info")
         logger.debug(f"Job ID: {job_id}")
         logger.debug(f"Job name: {job.job_meta.job_name}")
@@ -69,3 +79,57 @@ class JobManager:
         logger.debug(f"Job args: {job.args}")
         logger.debug(f"Job kwargs: {job.kwargs}")
         logger.debug("Job info end")
+
+        # DBに登録
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+
+        session.add(JobModel(
+            id=job_id,
+            name=job.job_meta.job_name,
+            desc=job.job_meta.job_desc,
+            priority=job.job_meta.priority.value,
+            is_repeat=job.job_meta.is_repeat,
+            interval=job.job_meta.job_interval.interval,
+            unit=job.job_meta.job_interval.unit.value,
+            has_depend_job=job.job_meta.has_depend_job,
+            depend_job_id=job.job_meta.job_depend.depend_job_id if job.job_meta.has_depend_job else None,
+            require_mediator=job.job_meta.job_depend.require_mediator if job.job_meta.has_depend_job else None,
+            mediator_func=job.job_meta.job_depend.mediator_func if job.job_meta.has_depend_job else None,
+            func=job.job_func, # pickle.dumpはDBに保存できない？ので
+            args=json.dumps(job.args),
+            kwargs=json.dumps(job.kwargs),
+            next_run=InternalUtils.calc_next_run_time(job.job_meta.job_interval)
+        ))
+
+        try:
+            session.commit()
+            session.close()
+        except Exception as e:
+            logger.error(f"Failed to register job: {e}")
+            session.rollback()
+            session.close()
+        else:
+            logger.succ(f"Job registered. ID: {job_id}, Name: {job.job_meta.job_name}")
+
+    def job_unregister(self, job_id: str):
+        pass # TODO
+
+    def job_update(self, job_id: str, job: Job):
+        pass # TODO
+
+
+class InternalUtils:
+    """内部で使用するユーティリティ"""
+    def calc_next_run_time(job_interval: JobInterval):
+        """次回実行日時を計算する"""
+        if job_interval.unit == JobIntervalUnit.SECONDS: # seconds
+            return datetime.now() + timedelta(seconds=job_interval.interval)
+        elif job_interval.unit == JobIntervalUnit.MINUTES: # minutes
+            return datetime.now() + timedelta(minutes=job_interval.interval)
+        elif job_interval.unit == JobIntervalUnit.HOURS: # hours
+            return datetime.now() + timedelta(hours=job_interval.interval)
+        elif job_interval.unit == JobIntervalUnit.DAYS: # days
+            return datetime.now() + timedelta(days=job_interval.interval)
+        else:
+            raise Exception("Unknown interval unit.")
