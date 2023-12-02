@@ -7,6 +7,7 @@ import pickle
 from datetime import datetime
 from datetime import timedelta
 import uuid
+import schedule
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
@@ -26,6 +27,10 @@ class JobManager:
         self.job_m_logger.succ("I-504 Job Manager started.")
 
         continue_flag = True
+
+        # メインループの実行
+        # TODO: メインループの実行間隔を設定できるようにする
+        schedule.every(5).seconds.do(self.interval_exec)
 
         while continue_flag:
             try:
