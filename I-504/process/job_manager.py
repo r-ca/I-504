@@ -142,15 +142,20 @@ class JobManager:
         logger = self.job_m_logger.child("interval_exec")
         queues = self.queue_check()
 
+        # TODO: ジョブの優先度によって実行順を変える
+        # TODO: ジョブの実行時間上限を設ける
         for queue in queues:
             Process(target=self.queue_executer, args=(queue,)).start()
 
     def queue_executer(self, queue: QueueModel):
+        """キューを実行する"""
+        logger = self.job_m_logger.child("queue_executer")
         if queue.status == JobStatus.SCHEDULED.value:
-            logger.info(f"Job {queue.name} will be executed.")
+            logger.info(f"Executing job. Job ID: {queue.job_id}")
             # ジョブを取得
             job = InternalUtils.get_job(queue.job_id)
             # ジョブを実行
+            # TODO: エラーハンドリング
             pickle.loads(job.func)(*json.loads(job.args), **json.loads(job.kwargs))
             # キューのステータスを更新
             InternalUtils.update_queue(queue, Job, True)
@@ -162,7 +167,7 @@ class JobManager:
         Session = sessionmaker(bind=self.engine)
         session = Session()
 
-        # SCHEUDLEDとWAITING_RETRYとWAITING_DEPENDのキューを取得
+        # SCHEDULEDとWAITING_RETRYとWAITING_DEPENDのキューを取得
         now = datetime.now()
         jobs = session.query(QueueModel) \
             .filter(QueueModel.next_run <= now) \
