@@ -86,6 +86,8 @@ def main():
                     job_desc="テスト",
                     priority=JobPriority.NORMAL,
                     is_repeat=True,
+                    can_retry=True,
+                    retry_limit=3,
                     job_interval=JobInterval(
                         interval=1,
                         unit=JobIntervalUnit.MINUTES

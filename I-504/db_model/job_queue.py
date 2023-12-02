@@ -11,6 +11,8 @@ class JobModel(Base):
     priority = Column(Integer) # ジョブの優先度
     status = Column(String(16)) # ジョブのステータス
     is_repeat = Column(Boolean) # 繰り返し実行するかどうか
+    can_retry = Column(Boolean) # リトライできるかどうか
+    retry_limit = Column(Integer) # リトライ回数の上限
     interval = Column(Integer) # ジョブの実行間隔
     unit = Column(String(64)) # ジョブの実行間隔の単位
     has_depend_job = Column(Boolean) # 依存ジョブを持つかどうか

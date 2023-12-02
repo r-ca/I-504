@@ -70,6 +70,8 @@ class JobManager:
         logger.debug(f"Job description: {job.job_meta.job_desc}")
         logger.debug(f"Job priority: {job.job_meta.priority}")
         logger.debug(f"Job is repeat: {job.job_meta.is_repeat}")
+        logger.debug(f"Job can retry: {job.job_meta.can_retry}")
+        logger.debug(f"Job retry limit: {job.job_meta.retry_limit}")
         logger.debug(f"Job interval: {job.job_meta.job_interval.interval} {job.job_meta.job_interval.unit}")
         logger.debug(f"Job has depend job: {job.job_meta.has_depend_job}")
         logger.debug(f"Job depend: {job.job_meta.job_depend.depend_job_id if job.job_meta.has_depend_job else None}")
@@ -91,6 +93,8 @@ class JobManager:
             priority=job.job_meta.priority.value,
             status=JobStatus.SCHEDULED.value,
             is_repeat=job.job_meta.is_repeat,
+            can_retry=job.job_meta.can_retry,
+            retry_limit=job.job_meta.retry_limit,
             interval=job.job_meta.job_interval.interval,
             unit=job.job_meta.job_interval.unit.value,
             has_depend_job=job.job_meta.has_depend_job,
@@ -127,7 +131,17 @@ class JobManager:
         for job in jobs:
             if job.status == JobStatus.SCHEDULED.value:
                 logger.info(f"Job {job.name} will be executed.")
-                # TODO: ジョブ実行
+                job_func = pickle.loads(job.func)
+                job_args = json.loads(job.args)
+                job_kwargs = json.loads(job.kwargs)
+                # 実行して正常終了であるかを判定
+                try:
+                    job_func(*job_args, **job_kwargs)
+                except Exception as e:
+                    logger.error(f"Job {job.name} failed: {e}")
+                else:
+                    logger.succ(f"Job {job.name} succeeded.")
+                    # TODO: ジョブステータス更新
             elif job.status == JobStatus.WAITING_RETRY.value:
                 logger.info(f"Job {job.name} will be retried.")
                 # TODO: ジョブ実行
@@ -167,3 +181,11 @@ class InternalUtils:
             return datetime.now() + timedelta(days=job_interval.interval)
         else:
             raise Exception("Unknown interval unit.")
+
+    def job_status_check(self, job: JobModel, success: bool):
+        """ジョブのステータスをチェックして更新する"""
+        if success:
+            pass
+        else:
+            pass
+
