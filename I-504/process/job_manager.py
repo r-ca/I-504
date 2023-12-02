@@ -72,6 +72,7 @@ class JobManager:
         logger.debug(f"Job is repeat: {job.job_meta.is_repeat}")
         logger.debug(f"Job can retry: {job.job_meta.can_retry}")
         logger.debug(f"Job retry limit: {job.job_meta.retry_limit}")
+        logger.debug(f"Job retry interval: {job.job_meta.retry_interval.interval} {job.job_meta.retry_interval.unit}")
         logger.debug(f"Job interval: {job.job_meta.job_interval.interval} {job.job_meta.job_interval.unit}")
         logger.debug(f"Job has depend job: {job.job_meta.has_depend_job}")
         logger.debug(f"Job depend: {job.job_meta.job_depend.depend_job_id if job.job_meta.has_depend_job else None}")
@@ -95,6 +96,8 @@ class JobManager:
             is_repeat=job.job_meta.is_repeat,
             can_retry=job.job_meta.can_retry,
             retry_limit=job.job_meta.retry_limit,
+            retry_interval=job.job_meta.retry_interval.interval,
+            retry_interval_unit=job.job_meta.retry_interval.unit.value,
             interval=job.job_meta.job_interval.interval,
             unit=job.job_meta.job_interval.unit.value,
             has_depend_job=job.job_meta.has_depend_job,

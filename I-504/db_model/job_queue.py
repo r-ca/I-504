@@ -13,6 +13,8 @@ class JobModel(Base):
     is_repeat = Column(Boolean) # 繰り返し実行するかどうか
     can_retry = Column(Boolean) # リトライできるかどうか
     retry_limit = Column(Integer) # リトライ回数の上限
+    retry_interval = Column(Integer) # リトライ間隔
+    retry_interval_unit = Column(String(64)) # リトライ間隔の単位
     interval = Column(Integer) # ジョブの実行間隔
     unit = Column(String(64)) # ジョブの実行間隔の単位
     has_depend_job = Column(Boolean) # 依存ジョブを持つかどうか
