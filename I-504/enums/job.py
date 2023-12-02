@@ -1,6 +1,6 @@
 from enum import Enum
 
-class JobReqTarget(Enum):
+class JobReqType(Enum):
     """The target of a job request."""
     CONTROL = "control"
     REGISTER = "register"
