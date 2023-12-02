@@ -6,6 +6,7 @@ class JobReqType(Enum):
     REGISTER = "register"
     UNREGISTER = "unregister"
     UPDATE = "update"
+    DEBUG = "debug" #デバッグ用
 
 class JobManagerControlCommand(Enum):
     """ジョブマネージャーをコントロールするコマンドの一覧"""

@@ -11,6 +11,10 @@ from .job.debug_tw_mk import debug_tw_mk
 
 from .process.job_manager import JobManager
 
+from .debug.test_stub import ProcessTest
+
+import pickle
+
 from multiprocessing import Pipe, Process
 
 import time
@@ -42,7 +46,7 @@ def main():
 
     job_manager_process.start()
 
-    time.sleep(5)
+    time.sleep(2)
 
     #テストリクエスト
     pipe.send(JobManagerRequest(
@@ -53,11 +57,20 @@ def main():
     ))
 
     pipe.send(JobManagerRequest(
+        job_req_type=JobReqType.DEBUG,
+        job_req_body=JobReqBody_Debug(
+            dict={"test_target_method": pickle.dumps(ProcessTest.stub_cat)}
+        )
+    ))
+
+    pipe.send(JobManagerRequest(
         job_req_type=JobReqType.CONTROL,
         job_req_body=JobReqBody_Control(
             command=JobManagerControlCommand.STOP
         )
     ))
+
+
 
 def core_init():
     logger = main_logger.child("init")

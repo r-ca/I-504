@@ -22,6 +22,11 @@ class JobReqBody_Update(IJobReqBody):
     """Job Managerのジョブを更新するリクエスト"""
     pass # TODO
 
+class JobReqBody_Debug(IJobReqBody):
+    """デバッグ用Request body(Dict型をそのまま引き渡す)"""
+    def __init__(self, dict: dict):
+        self.dict = dict
+
 class JobManagerRequest:
     """Job ManagerにPipeで送るリクエスト"""
     def __init__(self, job_req_type: JobReqType, job_req_body: IJobReqBody):
