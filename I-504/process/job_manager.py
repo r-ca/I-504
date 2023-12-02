@@ -18,7 +18,7 @@ class JobManager:
         while continue_flag:
             try:
                 request:JobManagerRequest = self.pipe.recv()
-                self.job_m_logger.info("Received request.")
+                self.job_m_logger.debug("Received request.")
                 # リクエストごとに分岐
                 # コントロールリクエスト
                 if request.job_req_type == JobReqType.CONTROL:
@@ -26,7 +26,8 @@ class JobManager:
                         self.job_m_logger.info("Received stop command.")
                         continue_flag = False
                     elif request.job_req_body.command == JobManagerControlCommand.TEST:
-                        self.job_m_logger.info("Received test command.")
+                        self.job_m_logger.info("Test command received.")
+                        self.job_m_logger.info("IPC test succeeded.")
             # 型一致エラー
             except TypeError as e:
                 self.job_m_logger.error("Received request is not JobManagerRequest type.")
