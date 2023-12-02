@@ -30,6 +30,10 @@ class QueueModel(Base):
 
     __tablename__ = '_queue'
 
+    __mapper_args__ = {
+        'confirm_deleted_rows': False
+    }
+
     id = Column(String(36), primary_key=True) # UUID
     job_id = Column(String(36), ForeignKey("_job.id")) # ジョブID(UUIDv4)
     status = Column(String(16)) # ジョブのステータス

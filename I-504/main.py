@@ -47,7 +47,7 @@ def main():
     # パイプの作成
     pipe, child_pipe = Pipe()
 
-    engine = create_engine("sqlite:///./db.sqlite3", echo=True)
+    engine = create_engine("sqlite:///./db.sqlite3", echo=False)
     Session = sessionmaker(bind=engine)
     session = Session()
 
