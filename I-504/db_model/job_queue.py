@@ -9,6 +9,7 @@ class JobModel(Base):
     name = Column(String(64)) # ジョブ名
     desc = Column(String(256)) # ジョブの説明
     priority = Column(Integer) # ジョブの優先度
+    status = Column(String(16)) # ジョブのステータス
     is_repeat = Column(Boolean) # 繰り返し実行するかどうか
     interval = Column(Integer) # ジョブの実行間隔
     unit = Column(String(64)) # ジョブの実行間隔の単位

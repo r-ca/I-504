@@ -89,6 +89,7 @@ class JobManager:
             name=job.job_meta.job_name,
             desc=job.job_meta.job_desc,
             priority=job.job_meta.priority.value,
+            status=JobStatus.SCHEDULED.value,
             is_repeat=job.job_meta.is_repeat,
             interval=job.job_meta.job_interval.interval,
             unit=job.job_meta.job_interval.unit.value,
@@ -118,6 +119,39 @@ class JobManager:
     def job_update(self, job_id: str, job: Job):
         pass # TODO
 
+    def interval_exec(self):
+        """実行するジョブを取得して実行(定期実行される関数)"""
+        logger = self.job_m_logger.child("interval_exec")
+        jobs = self.job_check()
+
+        for job in jobs:
+            if job.status == JobStatus.SCHEDULED.value:
+                logger.info(f"Job {job.name} will be executed.")
+                # TODO: ジョブ実行
+            elif job.status == JobStatus.WAITING_RETRY.value:
+                logger.info(f"Job {job.name} will be retried.")
+                # TODO: ジョブ実行
+            elif job.status == JobStatus.WAITING_DEPEND.value:
+                logger.info(f"Checking depend job of {job.name}.")
+                # TODO: 依存ジョブの状態チェック
+
+    def job_check(self) -> list[JobModel]:
+        """実行すべきジョブをチェックする"""
+        # DB
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+
+        # SCHEUDLEDとWAITING_RETRYとWAITING_DEPENDのジョブを取得
+        now = datetime.now()
+        jobs = session.query(JobModel) \
+            .filter(JobModel.next_run <= now) \
+            .filter(JobModel.status.in_([JobStatus.SCHEDULED.value, JobStatus.WAITING_RETRY.value, JobStatus.WAITING_DEPEND.value])) \
+            .all()
+
+        return jobs
+
+        # WAITING_DEPENDの依存ジョブをチェック
+        # TODO
 
 class InternalUtils:
     """内部で使用するユーティリティ"""
