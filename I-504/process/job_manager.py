@@ -146,7 +146,14 @@ class JobManager:
             logger.succ(f"Job registered. ID: {job_id}, Name: {job.job_meta.job_name}")
 
     def job_unregister(self, job_id: str):
-        pass # TODO
+        """ジョブの登録解除"""
+        logger = self.job_m_logger.child("job_unregister")
+        logger.debug(f"Unregistering job. ID: {job_id}")
+        session: Session = self.Session()
+        session.query(JobModel).filter(JobModel.id == job_id).delete()
+        session.commit()
+        logger.succ(f"Job unregistered. ID: {job_id}")
+        session.close()
 
     def job_update(self, job_id: str, job: Job):
         pass # TODO

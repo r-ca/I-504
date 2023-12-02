@@ -19,6 +19,9 @@ import uuid
 
 from multiprocessing import Pipe, Process
 
+import uvicorn
+from .fastapi.app import app
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -61,52 +64,54 @@ def main():
 
     time.sleep(2)
 
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
     #テストリクエスト
-    pipe.send(JobManagerRequest(
-        job_req_type=JobReqType.CONTROL,
-        job_req_body=JobReqBody_Control(
-            command=JobManagerControlCommand.TEST
-        )
-    ))
+    # pipe.send(JobManagerRequest(
+    #     job_req_type=JobReqType.CONTROL,
+    #     job_req_body=JobReqBody_Control(
+    #         command=JobManagerControlCommand.TEST
+    #     )
+    # ))
 
-    pipe.send(JobManagerRequest(
-        job_req_type=JobReqType.DEBUG,
-        job_req_body=JobReqBody_Debug(
-            dict={"test_target_method": pickle.dumps(ProcessTest.stub_cat)}
-        )
-    ))
+    # pipe.send(JobManagerRequest(
+    #     job_req_type=JobReqType.DEBUG,
+    #     job_req_body=JobReqBody_Debug(
+    #         dict={"test_target_method": pickle.dumps(ProcessTest.stub_cat)}
+    #     )
+    # ))
 
-    pipe.send(JobManagerRequest(
-        job_req_type=JobReqType.REGISTER,
-        job_req_body=JobReqBody_Register(
-            job_id=uuid.uuid4().__str__(),
-            job=Job(
-                job_meta=JobMeta(
-                    job_name="test_job",
-                    job_desc="テスト",
-                    priority=JobPriority.NORMAL,
-                    job_status=JobStatus.ENABLED,
-                    is_repeat=True,
-                    can_retry=True,
-                    retry_limit=3,
-                    retry_interval=JobInterval(
-                        interval=1,
-                        unit=JobIntervalUnit.MINUTES
-                    ),
-                    job_interval=JobInterval(
-                        interval=15,
-                        unit=JobIntervalUnit.SECONDS
-                    ),
-                    has_depend_job=False
-                ),
-                job_func=ProcessTest.stub_cat,
-                args=(),
-                kwargs={
-                    "is_cat": True
-                }
-            )
-        )
-    ))
+    # pipe.send(JobManagerRequest(
+    #     job_req_type=JobReqType.REGISTER,
+    #     job_req_body=JobReqBody_Register(
+    #         job_id=uuid.uuid4().__str__(),
+    #         job=Job(
+    #             job_meta=JobMeta(
+    #                 job_name="test_job",
+    #                 job_desc="テスト",
+    #                 priority=JobPriority.NORMAL,
+    #                 job_status=JobStatus.ENABLED,
+    #                 is_repeat=True,
+    #                 can_retry=True,
+    #                 retry_limit=3,
+    #                 retry_interval=JobInterval(
+    #                     interval=1,
+    #                     unit=JobIntervalUnit.MINUTES
+    #                 ),
+    #                 job_interval=JobInterval(
+    #                     interval=15,
+    #                     unit=JobIntervalUnit.SECONDS
+    #                 ),
+    #                 has_depend_job=False
+    #             ),
+    #             job_func=ProcessTest.stub_cat,
+    #             args=(),
+    #             kwargs={
+    #                 "is_cat": True
+    #             }
+    #         )
+    #     )
+    # ))
 
     # pipe.send(JobManagerRequest(
     #     job_req_type=JobReqType.CONTROL,
