@@ -7,3 +7,6 @@ class JobReqType(Enum):
     UNREGISTER = "unregister"
     UPDATE = "update"
 
+class JobManagerControlCommand(Enum):
+    """The command of a job manager."""
+    STOP = "stop"
