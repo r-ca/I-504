@@ -1,5 +1,5 @@
 from ..common.logger import Logger
-from multiprocessing import Pipe
+from multiprocessing import Pipe, Process
 from multiprocessing.connection import Connection
 from ..types.job import *
 from ..db_model.job_queue import *
@@ -143,14 +143,18 @@ class JobManager:
         queues = self.queue_check()
 
         for queue in queues:
-            if queue.status == JobStatus.SCHEDULED.value:
-                logger.info(f"Job {queue.name} will be executed.")
-                # ジョブを取得
-                job = InternalUtils.get_job(queue.job_id)
-                # ジョブを実行
-                pickle.loads(job.func)(*json.loads(job.args), **json.loads(job.kwargs))
-                # キューのステータスを更新
-                InternalUtils.update_queue(queue, Job, True)
+            Process(target=self.queue_executer, args=(queue,)).start()
+
+    def queue_executer(self, queue: QueueModel):
+        if queue.status == JobStatus.SCHEDULED.value:
+            logger.info(f"Job {queue.name} will be executed.")
+            # ジョブを取得
+            job = InternalUtils.get_job(queue.job_id)
+            # ジョブを実行
+            pickle.loads(job.func)(*json.loads(job.args), **json.loads(job.kwargs))
+            # キューのステータスを更新
+            InternalUtils.update_queue(queue, Job, True)
+
 
     def queue_check(self) -> list[JobModel]:
         """実行すべきジョブをチェックする"""
