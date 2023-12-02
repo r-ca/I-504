@@ -85,6 +85,7 @@ def main():
                     job_name="test_job",
                     job_desc="テスト",
                     priority=JobPriority.NORMAL,
+                    job_status=JobStatus.ENABLED,
                     is_repeat=True,
                     can_retry=True,
                     retry_limit=3,

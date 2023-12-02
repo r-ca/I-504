@@ -20,8 +20,8 @@ class JobPriority(Enum):
     HIGH = 2
     CRITICAL = 3
 
-class JobStatus(Enum):
-    """ジョブのステータス"""
+class QueueStatus(Enum):
+    """キューのステータス"""
     SCHEDULED = "scheduled" # 登録済み
     WAITING_DEPEND = "waiting_depend" # 依存ジョブ待ち
     RUNNING = "running" # 実行中
@@ -30,6 +30,11 @@ class JobStatus(Enum):
     FAILED = "failed" # 失敗
     CANCELED = "canceled" # キャンセル済み
     UNKNOWN = "unknown" # 不明
+
+class JobStatus(Enum):
+    """ジョブのステータス"""
+    ENABLED = "enabled" # 有効
+    DISABLED_BY_USER = "disabled_by_user" # 無効(ユーザー起因)
 
 class JobIntervalUnit(Enum):
     """ジョブの実行間隔の単位"""

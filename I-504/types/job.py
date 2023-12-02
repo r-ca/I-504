@@ -22,10 +22,11 @@ class JobInterval:
 
 class JobMeta:
     """Jobのメタデータ"""
-    def __init__(self, job_name: str, job_desc: str, priority: JobPriority, is_repeat: bool, can_retry: bool,retry_limit: int, retry_interval: JobInterval, job_interval: JobInterval, has_depend_job:bool , job_depend: JobDepend = None):
+    def __init__(self, job_name: str, job_desc: str, priority: JobPriority,job_status: JobStatus, is_repeat: bool, can_retry: bool,retry_limit: int, retry_interval: JobInterval, job_interval: JobInterval, has_depend_job:bool , job_depend: JobDepend = None):
         self.job_name = job_name # ジョブ名
         self.job_desc = job_desc # ジョブの説明
         self.priority = priority # ジョブの優先度
+        self.job_status = job_status # ジョブのステータス
         self.is_repeat = is_repeat # 繰り返し実行するかどうか
         self.can_retry = can_retry # リトライできるかどうか
         self.retry_limit = retry_limit # リトライ回数の上限

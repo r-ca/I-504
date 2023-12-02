@@ -109,7 +109,7 @@ class JobManager:
             name=job.job_meta.job_name,
             desc=job.job_meta.job_desc,
             priority=job.job_meta.priority.value,
-            status=JobStatus.SCHEDULED.value,
+            status=job.job_meta.job_status.value,
             is_repeat=job.job_meta.is_repeat,
             can_retry=job.job_meta.can_retry,
             retry_limit=job.job_meta.retry_limit,
@@ -131,7 +131,7 @@ class JobManager:
         session.add(QueueModel(
             id=uuid.uuid4().__str__(),
             job_id=job_id,
-            status=JobStatus.SCHEDULED.value,
+            status=QueueStatus.SCHEDULED.value,
             next_run=InternalUtils.calc_next_run_time(job.job_meta.job_interval),
             last_run=None,
             retry_count=0
@@ -153,7 +153,6 @@ class JobManager:
 
     def interval_executer(self, interval: int, pipe: Connection):
         """引数で指定された間隔で関数を実行する"""
-
         logger = self.job_m_logger.child("interval_executer")
         logger.debug(f"Interval executer started. Interval: {interval} seconds.")
         schedule.every(interval).seconds.do(self.interval_exec)
@@ -184,13 +183,13 @@ class JobManager:
         """キューを実行する"""
         logger = self.job_m_logger.child("queue_executer")
         session = self.Session() # このプロセスでのみ使用するSession
-        if queue.status == JobStatus.SCHEDULED.value:
+        if queue.status == QueueStatus.SCHEDULED.value:
             logger.info(f"Executing job. Queue ID: {queue.id}")
             # ジョブを取得
             job = InternalUtils.get_job(session, job_id=queue.job_id)
             # ジョブを実行
             # queueのstatusをRUNNINGに更新
-            queue.status = JobStatus.RUNNING.value
+            queue.status = QueueStatus.RUNNING.value
             session.add(queue)
             session.commit()
             # TODO: エラーハンドリング
@@ -210,7 +209,7 @@ class JobManager:
         now = datetime.now()
         jobs = session.query(QueueModel) \
             .filter(QueueModel.next_run <= now) \
-            .filter(QueueModel.status.in_([JobStatus.SCHEDULED.value, JobStatus.WAITING_RETRY.value, JobStatus.WAITING_DEPEND.value])) \
+            .filter(QueueModel.status.in_([QueueStatus.SCHEDULED.value, QueueStatus.WAITING_RETRY.value, QueueStatus.WAITING_DEPEND.value])) \
             .all()
 
         session.close()
@@ -242,7 +241,7 @@ class InternalUtils:
                 new_queue = QueueModel(
                     id=uuid.uuid4().__str__(),
                     job_id=job.id,
-                    status=JobStatus.SCHEDULED.value,
+                    status=QueueStatus.SCHEDULED.value,
                     next_run=InternalUtils.calc_next_run_time(JobInterval(job.interval, JobIntervalUnit(job.unit))),
                     last_run=datetime.now(),
                     retry_count=0
@@ -259,14 +258,14 @@ class InternalUtils:
                 # リトライ可能なジョブ
                 if queue.retry_count < job.retry_limit:
                     queue.retry_count += 1
-                    queue.status = JobStatus.WAITING_RETRY.value
+                    queue.status = QueueStatus.WAITING_RETRY.value
                     queue.last_run = datetime.now()
                     queue.next_run = InternalUtils.calc_next_run_time(JobInterval(job.retry_interval, JobIntervalUnit(job.retry_interval_unit)))
                 else:
-                    queue.status = JobStatus.FAILED.value
+                    queue.status = QueueStatus.FAILED.value
                     queue.last_run = datetime.now()
             else:
-                queue.status = JobStatus.FAILED.value
+                queue.status = QueueStatus.FAILED.value
                 queue.last_run = datetime.now()
 
             session.add(queue)
