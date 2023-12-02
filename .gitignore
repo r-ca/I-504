@@ -6,3 +6,11 @@ venv
 
 # Cookie
 /I-504/config/cookie/*
+
+# data
+/data
+/db.sqlite3
+
+# pychache
+/I-504/__pycache__/*
+/I-504/**/__pycache__/*
