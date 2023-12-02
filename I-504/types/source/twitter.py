@@ -22,3 +22,5 @@ class TweetData: # ツイートデータ（のうち保持するもの）
         self.created_at = created_at # TODO: とんでもない形式だったのでパーサー書いてDatetimeにする
         self.full_text = full_text
         self.user_rest_id = user_rest_id
+
+

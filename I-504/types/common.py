@@ -36,12 +36,3 @@ class CoreConfig: # システムのConfig
         self.db_settings = db_settings
         self.source_list = source_list
         self.dest_list = dest_list
-
-class TargetTypes:
-    sns = "sns"
-    blog = "blog" # TODO
-    web = "web" # TODO
-    portal = "portal" # TODO
-    news = "news" # TODO
-
-

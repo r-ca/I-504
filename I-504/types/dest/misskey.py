@@ -14,6 +14,6 @@ class MisskeyMetaData(MetaData):
         self.token: str = token
 
 class MisskeyPostReqData(IPostReqData):
-    def __init__(self, post_data:PostData, meta_data:MisskeyMetaData):
-        self.post_data:PostData = post_data
+    def __init__(self, post_body:str, meta_data:MisskeyMetaData):
+        self.post_body:str = post_body
         self.meta_data:MisskeyMetaData = meta_data

@@ -1,15 +1,20 @@
 
 # TODO: ファイルの場所とか考えなおす
+from ...source.twitter.actions import TwitterActions
+from ...source.twitter.utils import TwitterUtils
+from ...types.source.twitter import *
+from ...types.dest.common import *
+from ...types.dest.interface import *
 
+class SourceTwitterJob:
+    def update_tweets(user_rest_id:str, limit:int, engine, dest_id:str, dest_meta:MetaData, tw_cookie:TwitterAuthCookie):
 
-class TwitterUpdateJob:
-    def __init__(self, tw_cookie: TwCookie, update_limit: int, target_user_id: str):
-        self.tw_cookie = tw_cookie
-        self.update_limit = update_limit
-        self.target_user_id = target_user_id
+        tweets = TwitterActions.get_tweets(target_user_rest_id=user_rest_id, update_limit=limit, tw_cookie=tw_cookie)
 
-    def execute(self):
-        self.scraper = Scraper(cookies={ "ct0": self.tw_cookie.ct0, "auth_token": self.tw_cookie.auth_token })
-        
-    def get_tweets(self) -> list:
-        return self.scraper.get_tweets(self.target_user_id, self.update_limit)
+        new_tweets = TwitterActions.check_new_tweet(engine=engine, tweet_data=tweets)
+
+        # DBのアイテム更新
+        for tweet in new_tweets:
+            TwitterUtils.insert_new_item(engine=engine, tweet_data=tweet)
+
+        # 通知リクエスト
