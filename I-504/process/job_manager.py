@@ -6,6 +6,7 @@ from ..db_model.job_queue import *
 import pickle
 from datetime import datetime
 from datetime import timedelta
+import uuid
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
@@ -83,7 +84,7 @@ class JobManager:
         logger.debug(f"Job kwargs: {job.kwargs}")
         logger.debug("Job info end")
 
-        # DBに登録
+        # JobをDBに登録
         Session = sessionmaker(bind=self.engine)
         session = Session()
 
@@ -107,7 +108,17 @@ class JobManager:
             func=job.job_func, # pickle.dumpはDBに保存できない？ので
             args=json.dumps(job.args),
             kwargs=json.dumps(job.kwargs),
-            next_run=InternalUtils.calc_next_run_time(job.job_meta.job_interval)
+            # next_run=InternalUtils.calc_next_run_time(job.job_meta.job_interval)
+        ))
+
+        # 実行キューに登録
+        session.add(QueueModel(
+            id=uuid.uuid4().__str__(),
+            job_id=job_id,
+            status=JobStatus.SCHEDULED.value,
+            next_run=InternalUtils.calc_next_run_time(job.job_meta.job_interval),
+            last_run=None,
+            retry_count=0
         ))
 
         try:
@@ -129,40 +140,29 @@ class JobManager:
     def interval_exec(self):
         """実行するジョブを取得して実行(定期実行される関数)"""
         logger = self.job_m_logger.child("interval_exec")
-        jobs = self.job_check()
+        queues = self.queue_check()
 
-        for job in jobs:
-            if job.status == JobStatus.SCHEDULED.value:
-                logger.info(f"Job {job.name} will be executed.")
-                job_func = pickle.loads(job.func)
-                job_args = json.loads(job.args)
-                job_kwargs = json.loads(job.kwargs)
-                # 実行して正常終了であるかを判定
-                try:
-                    job_func(*job_args, **job_kwargs)
-                except Exception as e:
-                    logger.error(f"Job {job.name} failed: {e}")
-                else:
-                    logger.succ(f"Job {job.name} succeeded.")
-                    # TODO: ジョブステータス更新
-            elif job.status == JobStatus.WAITING_RETRY.value:
-                logger.info(f"Job {job.name} will be retried.")
-                # TODO: ジョブ実行
-            elif job.status == JobStatus.WAITING_DEPEND.value:
-                logger.info(f"Checking depend job of {job.name}.")
-                # TODO: 依存ジョブの状態チェック
+        for queue in queues:
+            if queue.status == JobStatus.SCHEDULED.value:
+                logger.info(f"Job {queue.name} will be executed.")
+                # ジョブを取得
+                job = InternalUtils.get_job(queue.job_id)
+                # ジョブを実行
+                pickle.loads(job.func)(*json.loads(job.args), **json.loads(job.kwargs))
+                # キューのステータスを更新
+                InternalUtils.update_queue(queue, Job, True)
 
-    def job_check(self) -> list[JobModel]:
+    def queue_check(self) -> list[JobModel]:
         """実行すべきジョブをチェックする"""
         # DB
         Session = sessionmaker(bind=self.engine)
         session = Session()
 
-        # SCHEUDLEDとWAITING_RETRYとWAITING_DEPENDのジョブを取得
+        # SCHEUDLEDとWAITING_RETRYとWAITING_DEPENDのキューを取得
         now = datetime.now()
-        jobs = session.query(JobModel) \
-            .filter(JobModel.next_run <= now) \
-            .filter(JobModel.status.in_([JobStatus.SCHEDULED.value, JobStatus.WAITING_RETRY.value, JobStatus.WAITING_DEPEND.value])) \
+        jobs = session.query(QueueModel) \
+            .filter(QueueModel.next_run <= now) \
+            .filter(QueueModel.status.in_([JobStatus.SCHEDULED.value, JobStatus.WAITING_RETRY.value, JobStatus.WAITING_DEPEND.value])) \
             .all()
 
         return jobs
@@ -185,10 +185,61 @@ class InternalUtils:
         else:
             raise Exception("Unknown interval unit.")
 
-    def job_status_check(self, job: JobModel, success: bool):
-        """ジョブのステータスをチェックして更新する"""
+    def update_queue(self, queue: QueueModel, job:JobModel, success: bool):
+        """ジョブとキューをチェックして必要であれば更新する"""
         if success:
-            pass
-        else:
-            pass
+            if job.is_repeat: # 繰り返し実行するジョブ
+                # 次回の実行をスケジュールする
+                new_queue = QueueModel(
+                    id=uuid.uuid4().__str__(),
+                    job_id=job.id,
+                    status=JobStatus.SCHEDULED.value,
+                    next_run=InternalUtils.calc_next_run_time(JobInterval(job.interval, JobIntervalUnit(job.unit))),
+                    last_run=datetime.now(),
+                    retry_count=0
+                )
+                Session = sessionmaker(bind=self.engine)
+                session = Session()
+                session.add(new_queue)
+                session.commit()
+                session.close()
+            else:
+                pass # 繰り返し実行しないジョブ
 
+            # 実行に成功したキューを削除
+            Session = sessionmaker(bind=self.engine)
+            session = Session()
+            session.delete(queue)
+            session.commit()
+            session.close()
+        else:
+            # 実行に失敗したキュー
+            if job.can_retry:
+                # リトライ可能なジョブ
+                if queue.retry_count < job.retry_limit:
+                    queue.retry_count += 1
+                    queue.status = JobStatus.WAITING_RETRY.value
+                    queue.last_run = datetime.now()
+                    queue.next_run = InternalUtils.calc_next_run_time(JobInterval(job.retry_interval, JobIntervalUnit(job.retry_interval_unit)))
+                else:
+                    queue.status = JobStatus.FAILED.value
+                    queue.last_run = datetime.now()
+            else:
+                queue.status = JobStatus.FAILED.value
+                queue.last_run = datetime.now()
+
+            Session = sessionmaker(bind=self.engine)
+            session = Session()
+            session.add(queue)
+            session.commit()
+            session.close()
+
+
+    def get_job(self, job_id: str):
+        """ジョブを取得する"""
+        Session = sessionmaker(bind=self.engine)
+        session = Session()
+
+        job = session.query(JobModel).filter(JobModel.id == job_id).first()
+
+        return job

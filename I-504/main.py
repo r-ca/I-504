@@ -88,6 +88,10 @@ def main():
                     is_repeat=True,
                     can_retry=True,
                     retry_limit=3,
+                    retry_interval=JobInterval(
+                        interval=1,
+                        unit=JobIntervalUnit.MINUTES
+                    ),
                     job_interval=JobInterval(
                         interval=1,
                         unit=JobIntervalUnit.MINUTES
