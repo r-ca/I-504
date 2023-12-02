@@ -8,6 +8,7 @@ from datetime import datetime
 from datetime import timedelta
 import uuid
 import schedule
+import time
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
@@ -28,9 +29,9 @@ class JobManager:
 
         continue_flag = True
 
-        # メインループの実行
-        # TODO: メインループの実行間隔を設定できるようにする
-        schedule.every(5).seconds.do(self.interval_exec)
+        # メインループを別プロセスで実行
+        interval_executer_pipe, child_pipe = Pipe() # TODO: 終了処理に組み込む
+        Process(target=self.interval_executer, args=(5, child_pipe)).start()
 
         while continue_flag:
             try:
@@ -142,10 +143,29 @@ class JobManager:
     def job_update(self, job_id: str, job: Job):
         pass # TODO
 
+    def interval_executer(self, interval: int, pipe: Connection):
+        """引数で指定された間隔で関数を実行する"""
+
+        logger = self.job_m_logger.child("interval_executer")
+        logger.debug(f"Interval executer started. Interval: {interval} seconds.")
+        schedule.every(interval).seconds.do(self.interval_exec)
+
+        continue_flag = True
+
+        while continue_flag:
+            # message = pipe.recv()
+            # if message == "stop":
+            #     logger.info("Received stop command.")
+            #     continue_flag = False
+            schedule.run_pending()
+            time.sleep(0.5)
+
     def interval_exec(self):
         """実行するジョブを取得して実行(定期実行される関数)"""
         logger = self.job_m_logger.child("interval_exec")
         queues = self.queue_check()
+
+        logger.debug(f"Found {len(queues)} jobs to execute.")
 
         # TODO: ジョブの優先度によって実行順を変える
         # TODO: ジョブの実行時間上限を設ける
@@ -158,16 +178,16 @@ class JobManager:
         if queue.status == JobStatus.SCHEDULED.value:
             logger.info(f"Executing job. Job ID: {queue.job_id}")
             # ジョブを取得
-            job = InternalUtils.get_job(queue.job_id)
+            job = InternalUtils.get_job(engine=self.engine, job_id=queue.job_id)
             # ジョブを実行
             # TODO: エラーハンドリング
             pickle.loads(job.func)(*json.loads(job.args), **json.loads(job.kwargs))
             # キューのステータスを更新
-            InternalUtils.update_queue(queue, Job, True)
+            InternalUtils.update_queue(self.engine, queue, job, True)
 
 
     def queue_check(self) -> list[JobModel]:
-        """実行すべきジョブをチェックする"""
+        """実行すべきキューをチェックする"""
         # DB
         Session = sessionmaker(bind=self.engine)
         session = Session()
@@ -199,7 +219,7 @@ class InternalUtils:
         else:
             raise Exception("Unknown interval unit.")
 
-    def update_queue(self, queue: QueueModel, job:JobModel, success: bool):
+    def update_queue(engine, queue: QueueModel, job:JobModel, success: bool):
         """ジョブとキューをチェックして必要であれば更新する"""
         if success:
             if job.is_repeat: # 繰り返し実行するジョブ
@@ -212,7 +232,7 @@ class InternalUtils:
                     last_run=datetime.now(),
                     retry_count=0
                 )
-                Session = sessionmaker(bind=self.engine)
+                Session = sessionmaker(bind=engine)
                 session = Session()
                 session.add(new_queue)
                 session.commit()
@@ -221,7 +241,7 @@ class InternalUtils:
                 pass # 繰り返し実行しないジョブ
 
             # 実行に成功したキューを削除
-            Session = sessionmaker(bind=self.engine)
+            Session = sessionmaker(bind=engine)
             session = Session()
             session.delete(queue)
             session.commit()
@@ -242,16 +262,16 @@ class InternalUtils:
                 queue.status = JobStatus.FAILED.value
                 queue.last_run = datetime.now()
 
-            Session = sessionmaker(bind=self.engine)
+            Session = sessionmaker(bind=engine)
             session = Session()
             session.add(queue)
             session.commit()
             session.close()
 
 
-    def get_job(self, job_id: str):
+    def get_job(engine, job_id: str):
         """ジョブを取得する"""
-        Session = sessionmaker(bind=self.engine)
+        Session = sessionmaker(bind=engine)
         session = Session()
 
         job = session.query(JobModel).filter(JobModel.id == job_id).first()

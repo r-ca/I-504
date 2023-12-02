@@ -93,12 +93,13 @@ def main():
                         unit=JobIntervalUnit.MINUTES
                     ),
                     job_interval=JobInterval(
-                        interval=1,
-                        unit=JobIntervalUnit.MINUTES
+                        interval=15,
+                        unit=JobIntervalUnit.SECONDS
                     ),
                     has_depend_job=False
                 ),
-                job_func=debug_tw_mk,
+                job_func=ProcessTest.stub_cat,
+                args=(),
                 kwargs={
                     "is_cat": True
                 }
@@ -106,12 +107,12 @@ def main():
         )
     ))
 
-    pipe.send(JobManagerRequest(
-        job_req_type=JobReqType.CONTROL,
-        job_req_body=JobReqBody_Control(
-            command=JobManagerControlCommand.STOP
-        )
-    ))
+    # pipe.send(JobManagerRequest(
+    #     job_req_type=JobReqType.CONTROL,
+    #     job_req_body=JobReqBody_Control(
+    #         command=JobManagerControlCommand.STOP
+    #     )
+    # ))
 
 
 
