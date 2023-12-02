@@ -27,7 +27,7 @@ class JobManager:
                         continue_flag = False
                     elif request.job_req_body.command == JobManagerControlCommand.TEST:
                         self.job_m_logger.info("Test command received.")
-                        self.job_m_logger.info("IPC test succeeded.")
+                        self.job_m_logger.succ("IPC test succeeded.")
             # 型一致エラー
             except TypeError as e:
                 self.job_m_logger.error("Received request is not JobManagerRequest type.")
