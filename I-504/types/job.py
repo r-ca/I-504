@@ -14,19 +14,26 @@ class JobDepend:
         self.require_mediator = require_mediator # 仲介が必要かどうか
         self.mediator_func = mediator_func # 仲介関数
 
+class JobInterval:
+    """ジョブの実行間隔"""
+    def __init__(self, interval: int, unit: JobIntervalUnit):
+        self.interval = interval # 間隔
+        self.unit = unit # 単位
+
 class JobMeta:
     """Jobのメタデータ"""
-    def __init__(self, job_name: str, job_desc: str, priority: JobPriority, has_depend_job:bool , job_depend: JobDepend = None):
+    def __init__(self, job_name: str, job_desc: str, priority: JobPriority, is_repeat: bool, job_interval: JobInterval, has_depend_job:bool , job_depend: JobDepend = None):
         self.job_name = job_name # ジョブ名
         self.job_desc = job_desc # ジョブの説明
         self.priority = priority # ジョブの優先度
+        self.is_repeat = is_repeat # 繰り返し実行するかどうか
+        self.job_interval = job_interval # ジョブの実行間隔
         self.has_depend_job = has_depend_job # 依存ジョブを持つかどうか
         self.job_depend = job_depend # 依存ジョブと仲介の設定
 
 class Job:
     """実際に記録されるJobの型"""
-    def __init__(self, job_id: str, job_meta: JobMeta, job_func, args: tuple = (), kwargs: dict = {}):
-        self.job_id = job_id # ジョブID
+    def __init__(self, job_meta: JobMeta, job_func, args: tuple = (), kwargs: dict = {}):
         self.job_meta = job_meta # ジョブのメタデータ
         self.job_func = pickle.dumps(job_func) # 実行する関数
         self.args = args # 関数に渡す引数

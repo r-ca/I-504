@@ -15,6 +15,8 @@ from .debug.test_stub import ProcessTest
 
 import pickle
 
+import uuid
+
 from multiprocessing import Pipe, Process
 
 import time
@@ -60,6 +62,30 @@ def main():
         job_req_type=JobReqType.DEBUG,
         job_req_body=JobReqBody_Debug(
             dict={"test_target_method": pickle.dumps(ProcessTest.stub_cat)}
+        )
+    ))
+
+    pipe.send(JobManagerRequest(
+        job_req_type=JobReqType.REGISTER,
+        job_req_body=JobReqBody_Register(
+            job_id=uuid.uuid4(),
+            job=Job(
+                job_meta=JobMeta(
+                    job_name="test_job",
+                    job_desc="テスト",
+                    priority=JobPriority.NORMAL,
+                    is_repeat=True,
+                    job_interval=JobInterval(
+                        interval=1,
+                        unit=JobIntervalUnit.MINUTES
+                    ),
+                    has_depend_job=False
+                ),
+                job_func=debug_tw_mk,
+                kwargs={
+                    "is_cat": True
+                }
+            )
         )
     ))
 

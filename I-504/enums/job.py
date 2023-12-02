@@ -30,3 +30,11 @@ class JobStatus(Enum):
     FAILED = "failed" # 失敗
     CANCELED = "canceled" # キャンセル済み
     UNKNOWN = "unknown" # 不明
+
+class JobIntervalUnit(Enum):
+    """ジョブの実行間隔の単位"""
+    SECONDS = "seconds"
+    MINUTES = "minutes"
+    HOURS = "hours"
+    DAYS = "days"
+    WEEKS = "weeks"

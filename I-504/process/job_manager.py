@@ -32,7 +32,8 @@ class JobManager:
                     else:
                         self.job_m_logger.error("Unknown command received.")
                 elif request.job_req_type == JobReqType.REGISTER: # Registerリクエスト
-                    pass #TODO
+                    self.job_m_logger.debug("Register request received.")
+                    self.job_register(job_id=request.job_req_body.job_id, job=request.job_req_body.job)
                 elif request.job_req_type == JobReqType.UNREGISTER: # Unregisterリクエスト
                     pass #TODO
                 elif request.job_req_type == JobReqType.UPDATE: # Updateリクエスト
@@ -49,3 +50,22 @@ class JobManager:
             # その他のエラー
             except Exception as e:
                 self.job_m_logger.error(f"Unknown error occured: {e}")
+
+    def job_register(self, job_id: str, job: Job):
+        # Stub
+        logger = self.job_m_logger.child("job_register")
+        logger.debug("Job info")
+        logger.debug(f"Job ID: {job_id}")
+        logger.debug(f"Job name: {job.job_meta.job_name}")
+        logger.debug(f"Job description: {job.job_meta.job_desc}")
+        logger.debug(f"Job priority: {job.job_meta.priority}")
+        logger.debug(f"Job is repeat: {job.job_meta.is_repeat}")
+        logger.debug(f"Job interval: {job.job_meta.job_interval.interval} {job.job_meta.job_interval.unit}")
+        logger.debug(f"Job has depend job: {job.job_meta.has_depend_job}")
+        logger.debug(f"Job depend: {job.job_meta.job_depend.depend_job_id if job.job_meta.has_depend_job else None}")
+        logger.debug(f"Job depend require mediator: {job.job_meta.job_depend.require_mediator if job.job_meta.has_depend_job else None}")
+        logger.debug(f"Job depend mediator func: {job.job_meta.job_depend.mediator_func if job.job_meta.has_depend_job else None}")
+        logger.debug(f"Job func: {pickle.loads(job.job_func)}")
+        logger.debug(f"Job args: {job.args}")
+        logger.debug(f"Job kwargs: {job.kwargs}")
+        logger.debug("Job info end")
