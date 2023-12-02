@@ -24,6 +24,16 @@ class JobManager:
         # Logger
         self.job_m_logger = Logger("JobMgr")
 
+        # Clear Queue
+        logger = self.job_m_logger.child("init")
+        session: Session = self.Session()
+        count = session.query(QueueModel).count()
+        logger.info(f"Found {count} queues.")
+        session.query(QueueModel).delete()
+        logger.succ("Deleted all queues.")
+        session.commit()
+        session.close()
+
     def run(self):
         self.job_m_logger.succ("I-504 Job Manager started.")
 
@@ -175,10 +185,14 @@ class JobManager:
         logger = self.job_m_logger.child("queue_executer")
         session = self.Session() # このプロセスでのみ使用するSession
         if queue.status == JobStatus.SCHEDULED.value:
-            logger.info(f"Executing job. Job ID: {queue.job_id}")
+            logger.info(f"Executing job. Queue ID: {queue.id}")
             # ジョブを取得
             job = InternalUtils.get_job(session, job_id=queue.job_id)
             # ジョブを実行
+            # queueのstatusをRUNNINGに更新
+            queue.status = JobStatus.RUNNING.value
+            session.add(queue)
+            session.commit()
             # TODO: エラーハンドリング
             pickle.loads(job.func)(*json.loads(job.args), **json.loads(job.kwargs))
             # キューのステータスを更新
