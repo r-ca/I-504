@@ -1,35 +1,34 @@
+# Config Loader
+from .common.config.core_loader import YamlConfigLoader
+
+# Logger
 from .common.logger import Logger
-from twitter.scraper import Scraper
-from .common.config.source.tw_loader import *
-from .common.config.core_loader import *
-from .source.twitter.actions import *
 
+from .job.debug_tw_mk import debug_tw_mk
 
-logger = Logger("main")
+import time
+
+from queick import JobQueue
+from queick import SchedulingTime
+from queick import cli
+import queick
+
+main_logger = Logger("main")
 def main():
-    # Initialize the system
-    init() 
+    core_init()
+    # Register debug job
+    queue = JobQueue()
 
-def init():
-    init_logger = logger.child("init")
+    test_job_interval = SchedulingTime()
+    test_job_interval.every(minutes=1).starting_from(time.time() + 10)
+    queue.cron(test_job_interval, debug_tw_mk, args=())
+    main_logger.info("Registered debug job")
 
-    init_logger.info("Initializing the system")
+    print(queick.JobQueue.mro())
 
-    # Load the config
-    init_logger.info("Loading the config")
-    
-    coreConfig = YamlConfigLoader("./I-504/config/config.yml").load() 
+def core_init():
+    logger = main_logger.child("init")
+    # Load Config
+    config = YamlConfigLoader("./I-504/config/config.yml").load()
+    logger.info("Loaded config")
 
-    init_logger.succ("Loaded Core Config")
-
-    twitterSourceConfig = TwitterSourceConfigLoader("./I-504/config/source/twitter.yml").load()
-
-    twitterActions = TwitterActions(tw_cookie=twitterSourceConfig.auth_cookie, update_limit=twitterSourceConfig.update_limit, target_user_rest_id=1267154527750258689)
-
-    tweets = twitterActions.get_tweets()
-
-    print(type(tweets))
-    print(len(tweets))
-
-    for tweet in tweets:
-        print(tweet.entry_id + ": " + tweet.full_text)

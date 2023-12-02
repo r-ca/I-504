@@ -1,8 +1,11 @@
 from ..source.twitter.actions import TwitterActions
 from ..source.twitter.utils import TwitterUtils
 from ..common.config.source.tw_loader import TwitterSourceConfigLoader
+from ..common.config.dest.mk_loader import *
 from ..types.source.twitter import *
+from ..types.dest.misskey import *
 from ..common.logger import Logger
+from ..dest.misskey.actions import MisskeyActions
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -39,13 +42,28 @@ def get_tweets():
         logger.info("New tweets found.")
 
         logger.info("New tweets:")
+
+        misskeyConfig = MisskeyConfigLoader(path="./I-504/config/dest/misskey.yml").load()
+        
+        misskeyActions = MisskeyActions()
+
         for tweet in parsed_new_tweets:
             logger.info(tweet.entry_id)
             logger.info(tweet.user_rest_id)
             logger.info(tweet.created_at)
             logger.info(tweet.full_text)
 
-    # DBのアイテム更新
-    for tweet in parsed_new_tweets:
-        TwitterUtils.insert_new_item(engine=engine, tweet_data=tweet)
+            # DBのアイテム更新 / 投稿テスト
+            for tweet in parsed_new_tweets:
+                TwitterUtils.insert_new_item(engine=engine, tweet_data=tweet)
 
+                MisskeyPostReqData = {
+                    "post_body": tweet.full_text,
+                    "meta_data": MisskeyMetaData(
+                        instance_address=misskeyConfig["target_instance"],
+                        token=misskeyConfig["token"],
+                        visibility=misskeyConfig["default_visibility"]
+                    )
+                }
+
+                misskeyActions.post(MisskeyPostReqData)

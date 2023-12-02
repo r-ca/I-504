@@ -1,6 +1,3 @@
-from ...types import *
-from ...interface.system import *
-
 class MisskeyConfigLoader: # TODO: 型
     def __init__(self, path:str):
         self.path = path

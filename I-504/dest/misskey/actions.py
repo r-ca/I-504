@@ -1,8 +1,10 @@
+from ...types.dest.interface import *
 from ...types.dest.misskey import *
-from ...common.logger import Logger
-from sqlalchemy.orm import sessionmaker
-from ...db_model.dest.misskey import *
+from ...types.dest.common import *
+
 import requests
+from ...common.logger import Logger
+
 
 mk_action_logger = Logger("misskey-actions")
 class MisskeyActions:
