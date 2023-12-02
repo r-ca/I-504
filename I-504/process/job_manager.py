@@ -12,6 +12,7 @@ import time
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
 
 import json
 
@@ -19,6 +20,7 @@ class JobManager:
     def __init__(self, pipe:Connection, engine:Engine):
         self.pipe:Connection = pipe
         self.engine:Engine = engine
+        self.Session = sessionmaker(bind=engine)
         # Logger
         self.job_m_logger = Logger("JobMgr")
 
@@ -89,8 +91,8 @@ class JobManager:
         logger.debug("Job info end")
 
         # JobをDBに登録
-        Session = sessionmaker(bind=self.engine)
-        session = Session()
+
+        session: Session = self.Session()
 
         session.add(JobModel(
             id=job_id,
@@ -127,11 +129,9 @@ class JobManager:
 
         try:
             session.commit()
-            session.close()
         except Exception as e:
             logger.error(f"Failed to register job: {e}")
             session.rollback()
-            session.close()
         else:
             logger.succ(f"Job registered. ID: {job_id}, Name: {job.job_meta.job_name}")
 
@@ -173,22 +173,24 @@ class JobManager:
     def queue_executer(self, queue: QueueModel):
         """キューを実行する"""
         logger = self.job_m_logger.child("queue_executer")
+        session = self.Session() # このプロセスでのみ使用するSession
         if queue.status == JobStatus.SCHEDULED.value:
             logger.info(f"Executing job. Job ID: {queue.job_id}")
             # ジョブを取得
-            job = InternalUtils.get_job(engine=self.engine, job_id=queue.job_id)
+            job = InternalUtils.get_job(session, job_id=queue.job_id)
             # ジョブを実行
             # TODO: エラーハンドリング
             pickle.loads(job.func)(*json.loads(job.args), **json.loads(job.kwargs))
             # キューのステータスを更新
-            InternalUtils.update_queue(self.engine, queue, job, True)
+            InternalUtils.update_queue(session, queue, job, True)
+
+        session.close() # Sessionを閉じる
 
 
     def queue_check(self) -> list[JobModel]:
         """実行すべきキューをチェックする"""
         # DB
-        Session = sessionmaker(bind=self.engine)
-        session = Session()
+        session: Session = self.Session()
 
         # SCHEDULEDとWAITING_RETRYとWAITING_DEPENDのキューを取得
         now = datetime.now()
@@ -197,13 +199,11 @@ class JobManager:
             .filter(QueueModel.status.in_([JobStatus.SCHEDULED.value, JobStatus.WAITING_RETRY.value, JobStatus.WAITING_DEPEND.value])) \
             .all()
 
+        session.close()
         return jobs
 
         # WAITING_DEPENDの依存ジョブをチェック
         # TODO
-
-class DbLock:
-    """複数Sessionを同時に確立することがないように読み書きを管理する"""
 
 class InternalUtils:
     """内部で使用するユーティリティ"""
@@ -220,7 +220,7 @@ class InternalUtils:
         else:
             raise Exception("Unknown interval unit.")
 
-    def update_queue(engine, queue: QueueModel, job:JobModel, success: bool):
+    def update_queue(session: Session, queue: QueueModel, job:JobModel, success: bool):
         """ジョブとキューをチェックして必要であれば更新する"""
         if success:
             if job.is_repeat: # 繰り返し実行するジョブ
@@ -233,18 +233,12 @@ class InternalUtils:
                     last_run=datetime.now(),
                     retry_count=0
                 )
-                Session = sessionmaker(bind=engine)
-                session = Session()
-
                 session.add(new_queue)
             else:
-                Session = sessionmaker(bind=engine)
-                session = Session()
-
+                pass
             # 実行に成功したキューを削除
             session.delete(queue)
             session.commit()
-            session.close()
         else:
             # 実行に失敗したキュー
             if job.can_retry:
@@ -261,18 +255,12 @@ class InternalUtils:
                 queue.status = JobStatus.FAILED.value
                 queue.last_run = datetime.now()
 
-            Session = sessionmaker(bind=engine)
-            session = Session()
             session.add(queue)
             session.commit()
-            session.close()
 
 
-    def get_job(engine, job_id: str):
+    def get_job(session: Session, job_id: str):
         """ジョブを取得する"""
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
         job = session.query(JobModel).filter(JobModel.id == job_id).first()
 
         return job
