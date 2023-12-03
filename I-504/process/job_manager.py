@@ -10,6 +10,8 @@ import uuid
 import schedule
 import time
 
+import socket
+
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
@@ -34,6 +36,8 @@ class JobManager:
         session.commit()
         session.close()
 
+
+
     def run(self):
         self.job_m_logger.succ("I-504 Job Manager started.")
 
@@ -43,10 +47,26 @@ class JobManager:
         interval_executer_pipe, child_pipe = Pipe() # TODO: 終了処理に組み込む
         Process(target=self.interval_executer, args=(5, child_pipe)).start()
 
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(("localhost", 49999))
+        server.listen(5)
+
         while continue_flag:
             try:
-                request:JobManagerRequest = self.pipe.recv()
-                self.job_m_logger.debug("Received request.")
+                # request:JobManagerRequest = self.pipe.recv()
+                # self.job_m_logger.debug("Received request.")
+
+                client, addr = server.accept()
+                self.job_m_logger.debug(f"Connected from {addr}")
+                received = client.recv(1024)
+                self.job_m_logger.debug(f"Received {received}")
+                request: JobManagerRequest = pickle.loads(reversed)
+                
+                #requestが空の場合はbreak
+                if not request:
+                    self.job_m_logger.debug("Received empty request.")
+                    break
+
                 # リクエストごとに分岐
 
                 if request.job_req_type == JobReqType.CONTROL: # Controlリクエスト

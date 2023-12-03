@@ -25,9 +25,13 @@ from .fastapi.app import app
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from .debug.test_sock_serv import *
+
 from .db_model.base import Base
 
 import time
+
+import socket
 
 from queick import JobQueue
 from queick import SchedulingTime
@@ -58,23 +62,34 @@ def main():
 
     Base.metadata.create_all(engine)
 
-    job_manager = JobManager(pipe=child_pipe, engine=engine)
+    # job_manager = JobManager(pipe=child_pipe, engine=engine)
 
-    job_manager_process = Process(target=job_manager.run, args=())
+    # job_manager_process = Process(target=job_manager.run, args=())
 
-    job_manager_process.start()
+    # job_manager_process.start()
+
+    Process(target=testserv, args=()).start()
 
     time.sleep(2)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client.connect("/tmp/socket_test.sock")
 
-    #テストリクエスト
-    # pipe.send(JobManagerRequest(
+    # uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    time.sleep(2)
+
+    client.sendall("ほげ".encode("utf-8"))
+
+    # テストリクエスト
+    # client.sendall(pickle.dumps(JobManagerRequest(
     #     job_req_type=JobReqType.CONTROL,
     #     job_req_body=JobReqBody_Control(
     #         command=JobManagerControlCommand.TEST
     #     )
-    # ))
+    # )))
+
+
 
     # pipe.send(JobManagerRequest(
     #     job_req_type=JobReqType.DEBUG,
