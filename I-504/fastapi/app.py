@@ -1,9 +1,11 @@
 from fastapi import FastAPI
+from .router._manage import router as manage_router
+
+import multiprocessing
+
+with multiprocessing.shared_memory
+
 
 app = FastAPI()
 
-@app.get("/")
-async def get_root():
-    return {"message": "Hello World"}
-
-@app.
+app.include_router(manage_router, prefix="/manage", tags=["manage"])

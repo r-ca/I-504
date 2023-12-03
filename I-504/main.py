@@ -50,6 +50,8 @@ def main():
     # パイプの作成
     pipe, child_pipe = Pipe()
 
+    job_manager_pipe = pipe
+
     engine = create_engine("sqlite:///./db.sqlite3", echo=False)
     Session = sessionmaker(bind=engine)
     session = Session()
