@@ -60,20 +60,29 @@ class JobManager:
                 logger.error(f"Connection error: {e}")
                 time.sleep(1)
 
-        logger.info("Waiting config message from parent process...")
-        config = pipe.recv()
-        logger.info("Received config message from parent process.")
-        logger.debug(f"Config: {config}")
-        try:
-            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            server.bind(config["socket_path"])
-            server.listen(5) # TODO: configから読み取る
-        except Exception as e:
-            logger.error(f"Failed to bind socket: {e}")
-            pipe.send("ng")
+        continue_flag = True
+        while continue_flag:
+            logger.info("Waiting config message from parent process...")
+            config = pickle.loads(pipe.recv())
+            logger.info("Received config message from parent process.")
+            logger.debug(f"Config: {config}")
+            try:
+                server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                server.bind(config["socket_path"])
+                server.listen(5) # TODO: configから読み取る
+            except Exception as e:
+                logger.error(f"Failed to bind socket: {e}")
+                pipe.send("ng")
+                # もう1度ループ
+                continue
+            else:
+                logger.succ("Socket bind succeeded!")
+                pipe.send("ok")
+                logger.info("Sent ok message to parent process.")
+                continue_flag = False
 
-        else:
-            logger.succ("Socket bind succeeded!")
+        time.sleep(1)
+        pipe.send("socket_test_ready")
 
         # Socket通信のテスト
         logger.debug("Waiting for connection...")
@@ -82,7 +91,7 @@ class JobManager:
         logger.debug("Sending test message...")
         client.send("ready".encode("utf-8"))
         logger.debug("Waiting for response...")
-        received = client.recv(1024)
+        received = client.recv(1024).decode("utf-8")
         logger.debug(f"Received: {received}")
         if received == "ok":
             logger.succ("Socket test succeeded.")

@@ -53,22 +53,20 @@ def main():
 
 
     engine = create_engine("sqlite:///./db.sqlite3", echo=False)
-    Session = sessionmaker(bind=engine)
-    session = Session()
 
     Base.metadata.create_all(engine)
 
+    socket_conf = job_manager_init(engine=engine)
 
     time.sleep(2)
 
-    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    client.connect("/tmp/socket_test.sock")
+    # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    # client.connect("/tmp/socket_test.sock")
 
     # uvicorn.run(app, host="0.0.0.0", port=8000)
 
     time.sleep(2)
 
-    client.sendall("ほげ".encode("utf-8"))
 
     # テストリクエスト
     # client.sendall(pickle.dumps(JobManagerRequest(
@@ -140,9 +138,8 @@ def job_manager_init(engine):
     # パイプの作成
     pipe, child_pipe = Pipe()
 
-
     job_manager = JobManager(engine=engine)
-    job_manager_process = Process(target=job_manager.initializer, args=(child_pipe))
+    job_manager_process = Process(target=job_manager.initializer, args=(child_pipe, ))
     job_manager_process.start()
 
     logger.info("Waiting for message from Job Manager init process...")
@@ -154,6 +151,8 @@ def job_manager_init(engine):
     else:
         logger.error("Failed to connect to Job Manager init process")
         exit(1)
+
+    socket_config = None
 
     # Socketのconfigを送る
     # TODO: Configから読み取る
@@ -167,17 +166,52 @@ def job_manager_init(engine):
         "socket_port": socket_port
     }
 
-    logger.info("Send socket config to Job Manager init process")
     pipe.send(pickle.dumps(socket_config))
+    logger.info("Sent socket config to Job Manager init process")
 
-    logger.info("Waiting for message from Job Manager init process...")
     res = pipe.recv()
-    if res == "ready":
-        logger.info("Received ready message from Job Manager init process")
-        pipe.send("ok")
-        logger.info("Sent ok message to Job Manager init process")
+    if res == "ok":
+        logger.info("Received ok message from Job Manager init process")
+    elif res == "ng":
+        logger.error("Received ng message from Job Manager init process")
+        # 既定値の使用を試みる
+        logger.info("Trying to use default socket config")
+        socket_mode = "unix"
+        socket_path = "/tmp/socket_default.sock"
+        socket_address = ""
+        socket_port = 0
+        socket_config = { # TODO: 型なんとかする
+            "socket_path": socket_path,
+            "socket_address": socket_address,
+            "socket_port": socket_port
+        }
+        pipe.send(pickle.dumps(socket_config))
+        logger.info("Sent socket config to Job Manager init process (default config))")
+        res = pipe.recv()
+        if res == "ok":
+            logger.info("Received ok message from Job Manager init process (default config)")
+        elif res == "ng":
+            logger.error("Received ng message from Job Manager init process")
+            logger.error("Failed to establish socket connection")
+            exit(1)
+
+    logger.info("Waiting socket_test_ready message from Job Manager init process...")
+    res = pipe.recv()
+    if res == "socket_test_ready":
+        logger.info("Received socket_test_ready message from Job Manager init process")
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.connect(socket_config["socket_path"])
+        logger.info("Connected to socket")
+        logger.info("Waiting for ready message from Job Manager init process...")
+        res = client.recv(4096).decode("utf-8")
+        if res == "ready":
+            logger.info("Received ready message from Job Manager init process")
+            client.sendall("ok".encode("utf-8"))
+            logger.info("Sent ok message to Job Manager init process")
+        else:
+            logger.error("Failed to connect to Job Manager init process")
+            exit(1)
     else:
         logger.error("Failed to connect to Job Manager init process")
         exit(1)
 
-    
