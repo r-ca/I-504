@@ -51,10 +51,6 @@ def main():
 
     # print(queick.JobQueue.mro())
 
-    # パイプの作成
-    pipe, child_pipe = Pipe()
-
-    job_manager_pipe = pipe
 
     engine = create_engine("sqlite:///./db.sqlite3", echo=False)
     Session = sessionmaker(bind=engine)
@@ -62,13 +58,6 @@ def main():
 
     Base.metadata.create_all(engine)
 
-    # job_manager = JobManager(pipe=child_pipe, engine=engine)
-
-    # job_manager_process = Process(target=job_manager.run, args=())
-
-    # job_manager_process.start()
-
-    Process(target=testserv, args=()).start()
 
     time.sleep(2)
 
@@ -140,8 +129,55 @@ def main():
 
 
 def core_init():
-    logger = main_logger.child("init")
+    logger = main_logger.child("core_init")
     # Load Config
     config = YamlConfigLoader("./I-504/config/config.yml").load()
     logger.info("Loaded config")
 
+def job_manager_init(engine):
+    logger = main_logger.child("job_manager_init")
+
+    # パイプの作成
+    pipe, child_pipe = Pipe()
+
+
+    job_manager = JobManager(engine=engine)
+    job_manager_process = Process(target=job_manager.initializer, args=(child_pipe))
+    job_manager_process.start()
+
+    logger.info("Waiting for message from Job Manager init process...")
+    res = pipe.recv()
+    if res == "ready":
+        logger.info("Received ready message from Job Manager init process")
+        pipe.send("ok")
+        logger.info("Sent ok message to Job Manager init process")
+    else:
+        logger.error("Failed to connect to Job Manager init process")
+        exit(1)
+
+    # Socketのconfigを送る
+    # TODO: Configから読み取る
+    socket_mode = "unix" # TODO: Support IPv4, IPv6
+    socket_path = "/tmp/socket_test.sock"
+    socket_address = ""
+    socket_port = 0
+    socket_config = { # TODO: 型なんとかする
+        "socket_path": socket_path,
+        "socket_address": socket_address,
+        "socket_port": socket_port
+    }
+
+    logger.info("Send socket config to Job Manager init process")
+    pipe.send(pickle.dumps(socket_config))
+
+    logger.info("Waiting for message from Job Manager init process...")
+    res = pipe.recv()
+    if res == "ready":
+        logger.info("Received ready message from Job Manager init process")
+        pipe.send("ok")
+        logger.info("Sent ok message to Job Manager init process")
+    else:
+        logger.error("Failed to connect to Job Manager init process")
+        exit(1)
+
+    
