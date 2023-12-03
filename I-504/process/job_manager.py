@@ -123,8 +123,15 @@ class JobManager:
 
         # TODO EnabledなJobをQueueに登録
 
+        self.init = True
+        self.run()
+
     def run(self):
         self.job_m_logger.succ("I-504 Job Manager started.")
+
+        if not self.init:
+            self.job_m_logger.error("Job Manager is not initialized.")
+            exit(1)
 
         continue_flag = True
 

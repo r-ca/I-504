@@ -17,7 +17,7 @@ import pickle
 
 import uuid
 
-from multiprocessing import Pipe, Process
+from multiprocessing import Pipe, Process, Value, Array
 
 import uvicorn
 from .fastapi.app import app
@@ -32,6 +32,10 @@ from .db_model.base import Base
 import time
 
 import socket
+
+import os
+
+import json
 
 from queick import JobQueue
 from queick import SchedulingTime
@@ -58,12 +62,15 @@ def main():
 
     socket_conf = job_manager_init(engine=engine)
 
+    #環境変数にソケットのパスをStringに変換して設定
+    os.environ["I504_SOCKET_CONF"] = json.dumps(socket_conf)
+
     time.sleep(2)
 
     # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     # client.connect("/tmp/socket_test.sock")
 
-    # uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
     time.sleep(2)
 
@@ -215,3 +222,4 @@ def job_manager_init(engine):
         logger.error("Failed to connect to Job Manager init process")
         exit(1)
 
+    return socket_config
