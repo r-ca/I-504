@@ -70,18 +70,24 @@ def main():
     # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     # client.connect("/tmp/socket_test.sock")
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    #uvicorn.run(app, host="172.16.30.1", port=55555)
+
+    Process(target=uvicorn.run, args=(app, ), kwargs=({"host":"localhost", "port":55555})).start()
 
     time.sleep(2)
 
+    socket_conf = json.loads(os.environ["I504_SOCKET_CONF"])
+
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client.connect(socket_conf["socket_path"])
 
     # テストリクエスト
-    # client.sendall(pickle.dumps(JobManagerRequest(
-    #     job_req_type=JobReqType.CONTROL,
-    #     job_req_body=JobReqBody_Control(
-    #         command=JobManagerControlCommand.TEST
-    #     )
-    # )))
+    client.sendall(pickle.dumps(JobManagerRequest(
+        job_req_type=JobReqType.CONTROL,
+        job_req_body=JobReqBody_Control(
+            command=JobManagerControlCommand.TEST
+        )
+    )))
 
 
 
@@ -222,4 +228,5 @@ def job_manager_init(engine):
         logger.error("Failed to connect to Job Manager init process")
         exit(1)
 
+    client.close()
     return socket_config

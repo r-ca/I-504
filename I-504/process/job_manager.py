@@ -99,6 +99,8 @@ class JobManager:
             logger.error("Socket test failed.")
             exit(1)
 
+        client.close()
+
         # Try to connect to DB
         logger.info("Trying to create session...")
         try:
@@ -124,9 +126,9 @@ class JobManager:
         # TODO EnabledなJobをQueueに登録
 
         self.init = True
-        self.run()
+        self.run(server=server)
 
-    def run(self):
+    def run(self, server: socket.socket):
         self.job_m_logger.succ("I-504 Job Manager started.")
 
         if not self.init:
@@ -139,21 +141,16 @@ class JobManager:
         interval_executer_pipe, child_pipe = Pipe() # TODO: 終了処理に組み込む
         Process(target=self.interval_executer, args=(5, child_pipe)).start()
 
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.bind(("localhost", 49999))
-        server.listen(5)
-
         while continue_flag:
             try:
                 # request:JobManagerRequest = self.pipe.recv()
                 # self.job_m_logger.debug("Received request.")
 
+                self.job_m_logger.debug("Waiting for connection...")
                 client, addr = server.accept()
                 self.job_m_logger.debug(f"Connected from {addr}")
-                received = client.recv(1024)
-                self.job_m_logger.debug(f"Received {received}")
-                request: JobManagerRequest = pickle.loads(reversed)
-                
+                self.job_m_logger.debug("Waiting for request...")
+                request:JobManagerRequest = pickle.loads(client.recv(4096))
                 #requestが空の場合はbreak
                 if not request:
                     self.job_m_logger.debug("Received empty request.")
