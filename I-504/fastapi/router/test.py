@@ -52,16 +52,12 @@ async def add_debug_job():
                         unit=JobIntervalUnit.MINUTES
                     ),
                     job_interval=JobInterval(
-                        interval=15,
+                        interval=2,
                         unit=JobIntervalUnit.SECONDS
                     ),
                     has_depend_job=False
                 ),
-                job_func=ProcessTest.stub_cat,
-                args=(),
-                kwargs={
-                    "is_cat": True
-                }
+                job_func=ProcessTest.test_action_mk
             )
         )
     )))
