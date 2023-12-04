@@ -21,8 +21,7 @@ from .debug.test_stub import ProcessTest
 from .debug.test_sock_serv import testserv
 
 # WebAPI server
-from uvicorn import run
-from .fastapi.app import app
+from .fastapi.entry import run as fastapi_run
 
 # Database
 from sqlalchemy import create_engine
@@ -32,7 +31,7 @@ from .db_model.base import Base
 # Utils
 import pickle
 import uuid
-#from multiprocessing import Pipe, Process, Value, Array
+from multiprocessing import Pipe, Process, Value, Array
 # import multiprocess as multiprocess
 from .common.dill_multiprocessing import DillProcess
 import time
@@ -44,65 +43,27 @@ main_logger = Logger("main")
 def main():
     core_init()
 
+    # DB Init
+    engine = create_engine("sqlite:///./db.sqlite3", echo=False)
+    Base.metadata.create_all(engine)
+    engine.dispose()
 
-    # TODO: 切り出す
-    # engine = create_engine("sqlite:///./db.sqlite3", echo=False)
-
-    # Base.metadata.create_all(engine)
-
-    ## socket_conf = job_manager_init(engine_url="sqlite:///./db.sqlite3") # TODO: Configから読み取る
-
-    # engine.dispose()
-
-    # #環境変数にソケットのパスをStringに変換して設定
-    # os.environ["I504_SOCKET_CONF"] = json.dumps(socket_conf)
-
-    # time.sleep(2)
-
-    # DB Access Manager のデバッグ
-    # db_manager = DbManager()
-
-    # DillProcess(target=db_manager.init, args=("sqlite:///./db.sqlite3", )).run()
-
-    # time.sleep(2)
-
-    # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    # client.connect("/tmp/db_access_manager.sock")
-
-    # session = Session()
-
-    # # テストリクエスト
-    # client.sendall(pickle.dumps(DbQueue(
-    #     require_result=True,
-    #     priority=1,
-    #     session=None
-    # )))
-
+    # Session Pool Init
     session_pool = SessionPool()
     DillProcess(target=session_pool.init, kwargs={"engine_url": "sqlite:///./db.sqlite3"}).start()
-
-    # DillProcess(target=testserv).start()
-
-    # time.sleep(2)
-
-    # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    # client.connect("/tmp/socket_test.sock")
-
-    # テストリクエスト
-    # client.sendall("にゃあ".encode("utf-8"))
-
-    time.sleep(2)
 
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     client.connect("/tmp/session_pool.sock")
 
-    # テストリクエスト
     client.sendall("connection_test".encode("utf-8"))
     client.recv(1024).decode("utf-8")
+    client.close()
+
+    time.sleep(2)
 
     #uvicorn.run(app, host="172.16.30.1", port=55555)
 
-    DillProcess(target=run, args=(app, ), kwargs=({"host":"localhost", "port":44333})).run()
+    DillProcess(target=fastapi_run, kwargs=({"host":"localhost", "port":44333})).start()
 
     time.sleep(2)
 
