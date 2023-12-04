@@ -7,3 +7,4 @@ sqlalchemy
 fastapi
 uvicorn
 schedule
+colorama
