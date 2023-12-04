@@ -10,14 +10,6 @@ import queue
 import uuid
 import time
 
-def init(engine_url: str):
-    engine = create_engine(url=engine_url, echo=False)
-    Session = sessionmaker(bind=engine)
-
-    db_manager = DbManager()
-
-    db_manager.run(engine=engine, session=Session)
-
 # データベースアクセスキューの型(ここにあったほうがインポートで便利なので)
 class DbQueue:
     def __init__(self, require_result: bool, priority: int, session: Session):
@@ -39,6 +31,12 @@ class DbManager:
         self.Session = None
 
         self.queue = queue.PriorityQueue()
+
+    def init(self, engine_url: str):
+        engine = create_engine(engine_url, echo=False)
+        Session = sessionmaker(bind=engine)
+
+        self.run(engine=engine, session=Session)
 
     def run(self, engine: create_engine, session: sessionmaker):
         """run"""

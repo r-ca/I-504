@@ -11,7 +11,6 @@ from .enums.job import *
 
 # DB Access Manager
 from .process.db_access_manager import *
-from .process.db_access_manager import init as db_manager_init
 
 # Debug
 from .job.debug_tw_mk import debug_tw_mk
@@ -58,18 +57,28 @@ def main():
     # time.sleep(2)
 
     # DB Access Manager のデバッグ
+    db_manager = DbManager()
 
-    DillProcess(target=db_manager_init, kwargs={"engine_url": "sqlite:///./db.sqlite3"}).start()
+    DillProcess(target=db_manager.init, args=("sqlite:///./db.sqlite3", )).run()
 
     time.sleep(2)
 
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     client.connect("/tmp/db_access_manager.sock")
 
+    session = Session()
+
+    # テストリクエスト
+    client.sendall(pickle.dumps(DbQueue(
+        require_result=True,
+        priority=1,
+        session=None
+    )))
+
 
     #uvicorn.run(app, host="172.16.30.1", port=55555)
 
-    DillProcess(target=run, args=(app, ), kwargs=({"host":"localhost", "port":55555})).run()
+    DillProcess(target=run, args=(app, ), kwargs=({"host":"localhost", "port":44333})).run()
 
     time.sleep(2)
 
