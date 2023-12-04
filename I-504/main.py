@@ -14,6 +14,7 @@ from .process.db_access_manager import *
 
 # Session Pool
 from .process.session_pool import *
+from .common.get_session import get_session
 
 # Debug
 from .job.debug_tw_mk import debug_tw_mk
@@ -50,7 +51,6 @@ def main():
     engine.dispose()
 
     # Session Pool Init
-    
     pipe, child_pipe = Pipe()
     session_pool = SessionPool()
     DillProcess(target=session_pool.init, kwargs={"engine_url": "sqlite:///./db.sqlite3", "pipe": child_pipe}).start()
@@ -59,11 +59,17 @@ def main():
         "socket_listen": 5
     }
     session_pool_conf = ipc_init(pipe=pipe, socket_config=session_pool_conf)
+    os.environ["I504_SESSION_POOL_CONF"] = json.dumps(session_pool_conf)
+
+    #DEBUG
+    session = dill.loads(get_session())
+    session.close()
 
 
-    time.sleep(2)
-
-    #uvicorn.run(app, host="172.16.30.1", port=55555)
+    # Job Manager Init
+    pipe, child_pipe = Pipe()
+    job_manager = JobManager()
+    DillProcess(target=job_manager.init, kwargs={"engine_url": "sqlite:///./db.sqlite3", "pipe": child_pipe}).start()
 
     DillProcess(target=fastapi_run, kwargs=({"host":"localhost", "port":44333})).start()
 

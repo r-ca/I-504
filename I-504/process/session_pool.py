@@ -23,6 +23,7 @@ class SessionPool:
         server = ProcessUtils.configure_socket(pipe=pipe)
 
         self.engine = create_engine(engine_url, echo=False)
+        self.Session = sessionmaker(bind=self.engine)
 
         logger.info("Session Pool Initializer finished.")
 
