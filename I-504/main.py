@@ -61,11 +61,6 @@ def main():
     session_pool_conf = ipc_init(pipe=pipe, socket_config=session_pool_conf)
     os.environ["I504_SESSION_POOL_CONF"] = json.dumps(session_pool_conf)
 
-    #DEBUG
-    session = get_session()
-    session.close()
-
-
     # Job Manager Init
     pipe, child_pipe = Pipe()
     job_manager = JobManager()
