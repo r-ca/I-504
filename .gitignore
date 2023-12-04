@@ -14,3 +14,11 @@ venv
 # pychache
 /I-504/__pycache__/*
 /I-504/**/__pycache__/*
+
+# Config
+/I-504/config/source/*.yml
+!/I-504/config/source/*_example.yml
+/I-504/config/dest/*.yml
+!/I-504/config/dest/*_example.yml
+/I-504/config/*.yml
+!/I-504/config/*_example.yml
