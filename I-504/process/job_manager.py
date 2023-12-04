@@ -7,6 +7,7 @@ from ..db_model.job_queue import *
 import pickle
 from datetime import datetime
 from datetime import timedelta
+from ..common.get_session import get_session
 import uuid
 import schedule
 import time
@@ -34,20 +35,12 @@ class JobManager:
         server: socket.socket = ProcessUtils.configure_socket(pipe=pipe)
 
         # Try to connect to DB
-        logger.info("Trying to create session...")
-        try:
-            self.Session = sessionmaker(bind=self.engine)
-            session: Session = self.Session()
-            session.close()
-        except Exception as e:
-            logger.error(f"Failed to create session: {e}")
-            exit(1)
-        else:
-            logger.succ("Session created.")
+        logger.info("Trying to get session...")
+
+        session = get_session()
 
         # Queueのクリア
         logger.info("Clearing queue...")
-        session: Session = self.Session()
         count = session.query(QueueModel).count()
         logger.info(f"Found {count} queues.")
         session.query(QueueModel).delete()
