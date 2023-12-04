@@ -13,19 +13,19 @@ class Logger:
             print(Style.DIM + f"[DEBUG] {self.tag}:\t {msg}" + Style.RESET_ALL)
 
     def succ(self, msg:str):
-        print(Fore.LIGHTGREEN_EX + "[SUCC ]" + Fore.RESET + f" {self.tag}:\t {msg}")
+        print(Back.LIGHTGREEN_EX + "[SUCC ]" + Back.RESET + Fore.LIGHTGREEN_EX + f" {self.tag}:\t {msg}" + Fore.RESET)
 
     def info(self, msg:str):
-        print(Fore.LIGHTBLUE_EX + "[INFO ]" + Fore.RESET + f" {self.tag}:\t {msg}")
+        print(Back.LIGHTBLUE_EX + "[INFO ]" + Back.RESET + Fore.LIGHTBLUE_EX + f" {self.tag}:\t {msg}" + Fore.RESET)
 
     def warn(self, msg:str):
-        print(Fore.YELLOW + "[WARN ]" + Fore.RESET + f" {self.tag}:\t {msg}")
+        print(Back.YELLOW + "[WARN ]" + Back.RESET + Fore.YELLOW + f" {self.tag}:\t {msg}" + Fore.RESET)
 
     def error(self, msg:str):
-        print(Fore.RED + "[ERROR]" + Fore.RESET + f" {self.tag}:\t {msg}")
+        print(Back.RED + "[ERROR]" + Back.RESET + Fore.RED + f" {self.tag}:\t {msg}" + Fore.RESET)
 
     def fatal(self, msg:str):
-        print(Back.RED + "[FATAL]" + Back.RESET + f" {self.tag}:\t {msg}")
+        print(Back.RED + "[FATAL]" + f" {self.tag}:\t {msg}" + Back.RESET)
 
     def child(self, child_tag:str):
         return Logger(f"{self.tag}/{child_tag}")
