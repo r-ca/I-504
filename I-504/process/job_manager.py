@@ -15,12 +15,13 @@ import socket
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
 
 import json
 
 class JobManager:
-    def __init__(self, engine: Engine):
-        self.engine:Engine = engine
+    def __init__(self, engine_url: str):
+        #self.engine:Engine = create_engine(engine_url, echo=False)
         self.Session = None # initializerで設定するので
         # Logger
         self.job_m_logger = Logger("JobMgr")

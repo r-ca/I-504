@@ -37,11 +37,14 @@ def main():
     core_init()
 
 
+    # TODO: 切り出す
     engine = create_engine("sqlite:///./db.sqlite3", echo=False)
 
     Base.metadata.create_all(engine)
 
-    socket_conf = job_manager_init(engine=engine)
+    socket_conf = job_manager_init(engine_url="sqlite:///./db.sqlite3") # TODO: Configから読み取る
+
+    engine.dispose()
 
     #環境変数にソケットのパスをStringに変換して設定
     os.environ["I504_SOCKET_CONF"] = json.dumps(socket_conf)
@@ -124,13 +127,13 @@ def core_init():
     config = YamlConfigLoader("./I-504/config/config.yml").load()
     logger.info("Loaded config")
 
-def job_manager_init(engine):
+def job_manager_init(engine_url="sqlite:///./db.sqlite3"):
     logger = main_logger.child("job_manager_init")
 
     # パイプの作成
     pipe, child_pipe = Pipe()
 
-    job_manager = JobManager(engine=engine)
+    job_manager = JobManager(engine_url=engine_url)
     job_manager_process = Process(target=job_manager.initializer, args=(child_pipe, ))
     job_manager_process.start()
 
