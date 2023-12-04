@@ -12,10 +12,13 @@ from .enums.job import *
 # DB Access Manager
 from .process.db_access_manager import *
 
+# Session Pool
+from .process.session_pool import *
+
 # Debug
 from .job.debug_tw_mk import debug_tw_mk
 from .debug.test_stub import ProcessTest
-from .debug.test_sock_serv import *
+from .debug.test_sock_serv import testserv
 
 # WebAPI server
 from uvicorn import run
@@ -57,24 +60,45 @@ def main():
     # time.sleep(2)
 
     # DB Access Manager のデバッグ
-    db_manager = DbManager()
+    # db_manager = DbManager()
 
-    DillProcess(target=db_manager.init, args=("sqlite:///./db.sqlite3", )).run()
+    # DillProcess(target=db_manager.init, args=("sqlite:///./db.sqlite3", )).run()
+
+    # time.sleep(2)
+
+    # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    # client.connect("/tmp/db_access_manager.sock")
+
+    # session = Session()
+
+    # # テストリクエスト
+    # client.sendall(pickle.dumps(DbQueue(
+    #     require_result=True,
+    #     priority=1,
+    #     session=None
+    # )))
+
+    session_pool = SessionPool()
+    DillProcess(target=session_pool.init, kwargs={"engine_url": "sqlite:///./db.sqlite3"}).start()
+
+    # DillProcess(target=testserv).start()
+
+    # time.sleep(2)
+
+    # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    # client.connect("/tmp/socket_test.sock")
+
+    # テストリクエスト
+    # client.sendall("にゃあ".encode("utf-8"))
 
     time.sleep(2)
 
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    client.connect("/tmp/db_access_manager.sock")
-
-    session = Session()
+    client.connect("/tmp/session_pool.sock")
 
     # テストリクエスト
-    client.sendall(pickle.dumps(DbQueue(
-        require_result=True,
-        priority=1,
-        session=None
-    )))
-
+    client.sendall("connection_test".encode("utf-8"))
+    client.recv(1024).decode("utf-8")
 
     #uvicorn.run(app, host="172.16.30.1", port=55555)
 
