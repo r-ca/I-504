@@ -9,6 +9,9 @@ from .process.job_manager import JobManager
 from .types.job import *
 from .enums.job import *
 
+# DB Access Manager
+from .process.db_access_manager import *
+
 # Debug
 from .job.debug_tw_mk import debug_tw_mk
 from .debug.test_stub import ProcessTest
@@ -38,21 +41,28 @@ def main():
 
 
     # TODO: 切り出す
-    engine = create_engine("sqlite:///./db.sqlite3", echo=False)
+    # engine = create_engine("sqlite:///./db.sqlite3", echo=False)
 
-    Base.metadata.create_all(engine)
+    # Base.metadata.create_all(engine)
 
-    socket_conf = job_manager_init(engine_url="sqlite:///./db.sqlite3") # TODO: Configから読み取る
+    ## socket_conf = job_manager_init(engine_url="sqlite:///./db.sqlite3") # TODO: Configから読み取る
 
-    engine.dispose()
+    # engine.dispose()
 
-    #環境変数にソケットのパスをStringに変換して設定
-    os.environ["I504_SOCKET_CONF"] = json.dumps(socket_conf)
+    # #環境変数にソケットのパスをStringに変換して設定
+    # os.environ["I504_SOCKET_CONF"] = json.dumps(socket_conf)
+
+    # time.sleep(2)
+
+    # DB Access Manager のデバッグ
+    db_manager = DbManager(engine_url="sqlite:///./db.sqlite3")
+    Process(target=db_manager.init).start()
 
     time.sleep(2)
 
-    # client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    # client.connect("/tmp/socket_test.sock")
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    client.connect("/tmp/db_access_manager.sock")
+
 
     #uvicorn.run(app, host="172.16.30.1", port=55555)
 
