@@ -4,38 +4,34 @@ from .common.config.core_loader import YamlConfigLoader
 # Logger
 from .common.logger import Logger
 
+# Job Manager
+from .process.job_manager import JobManager
 from .types.job import *
 from .enums.job import *
 
+# Debug
 from .job.debug_tw_mk import debug_tw_mk
-
-from .process.job_manager import JobManager
-
 from .debug.test_stub import ProcessTest
+from .debug.test_sock_serv import *
 
-import pickle
-
-import uuid
-
-from multiprocessing import Pipe, Process, Value, Array
-
+# WebAPI server
 import uvicorn
 from .fastapi.app import app
 
+# Database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from .debug.test_sock_serv import *
-
 from .db_model.base import Base
 
+# Utils
+import pickle
+import uuid
+from multiprocessing import Pipe, Process, Value, Array
 import time
-
 import socket
-
 import os
-
 import json
+
 main_logger = Logger("main")
 def main():
     core_init()
