@@ -22,7 +22,7 @@ def get_session():
     logger.debug("session_req message send")
     client.send("session_req".encode("utf-8"))
     logger.debug("Waiting for response...")
-    received = client.recv(1024)
+    received = client.recv(4096)
     logger.debug("Received")
     return received
 
