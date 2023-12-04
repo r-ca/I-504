@@ -70,8 +70,6 @@ def main():
         )
     )))
 
-
-
     # pipe.send(JobManagerRequest(
     #     job_req_type=JobReqType.DEBUG,
     #     job_req_body=JobReqBody_Debug(

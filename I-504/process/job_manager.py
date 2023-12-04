@@ -26,16 +26,6 @@ class JobManager:
         self.job_m_logger = Logger("JobMgr")
         self.init: bool = False
 
-        # Clear Queue
-        # logger = self.job_m_logger.child("init")
-        # session: Session = self.Session()
-        # count = session.query(QueueModel).count()
-        # logger.info(f"Found {count} queues.")
-        # session.query(QueueModel).delete()
-        # logger.succ("Deleted all queues.")
-        # session.commit()
-        # session.close()
-
     def initializer(self, pipe:Connection):
         """init"""
         logger = self.job_m_logger.child("init")
@@ -260,15 +250,37 @@ class JobManager:
         else:
             logger.succ(f"Job registered. ID: {job_id}, Name: {job.job_meta.job_name}")
 
-    def queue_db_register(self, queue: QueueModel):
-        """キューをデータベースに登録する"""
-        logger = self.job_m_logger.child("queue_register")
-        logger.debug(f"Registering queue. ID: {queue.id}")
-        session: Session = self.Session()
-        session.add(queue)
-        session.commit()
-        logger.succ(f"Queue registered. ID: {queue.id}")
-        session.close()
+    def queue_register_from_job(self, job: JobModel, is_depend: bool = False) -> QueueModel:
+        """渡されたジョブからキューを生成する
+        is_depend: 依存キューとして登録するかどうか"""
+        logger = self.job_m_logger.child("queue_req_job")
+        logger.debug(f"Creating queue from job... JobID: {job.id}")
+
+        queue = QueueModel(
+            id=uuid.uuid4().__str__(),
+            job_id=job.id,
+            next_run=InternalUtils.calc_next_run_time(job.job_meta.job_interval),
+            last_run=None,
+            retry_count=0
+        )
+
+        # 自身が依存キューとして登録される場合
+        if is_depend:
+            queue.status = QueueStatus.WAITING_DEPEND.value
+        else:
+            queue.status = QueueStatus.SCHEDULED.value
+
+        # 依存ジョブのチェック
+        if job.has_depend_job:
+            logger.debug("Queue has depend job.")
+            # 依存ジョブを取得
+            depend_job: JobModel = InternalUtils.get_job(job.depend_job_id)
+            # 自身を再帰的に呼び出す
+            depend_queue: QueueModel = self.queue_register_from_job(job=depend_job, is_depend=True)
+            # 依存キューを登録
+            queue.depend_queue_id = depend_queue.id
+
+        return queue
 
     def job_unregister(self, job_id: str):
         """ジョブの登録解除"""

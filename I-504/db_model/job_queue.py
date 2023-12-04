@@ -40,5 +40,6 @@ class QueueModel(Base):
     next_run = Column(DateTime) # 次回実行日時
     last_run = Column(DateTime) # 最終実行日時
     retry_count = Column(Integer) # リトライ回数
+    depend_queue_id = Column(String(36)) # 依存キューのID
     # created_at = Column(DateTime) # 作成日時
     # updated_at = Column(DateTime) # 更新日時
