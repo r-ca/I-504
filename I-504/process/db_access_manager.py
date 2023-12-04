@@ -5,9 +5,18 @@ from ..common.logger import Logger
 
 import socket
 import pickle
+import dill
 import queue
 import uuid
 import time
+
+def init(engine_url: str):
+    engine = create_engine(url=engine_url, echo=False)
+    Session = sessionmaker(bind=engine)
+
+    db_manager = DbManager()
+
+    db_manager.run(engine=engine, session=Session)
 
 # データベースアクセスキューの型(ここにあったほうがインポートで便利なので)
 class DbQueue:
@@ -25,21 +34,18 @@ class DbQueue:
 
 class DbManager:
     """データベースアクセスをとりまとめるマネージャー"""
-    def __init__(self, engine_url: str):
-        self.engine_url = engine_url
+    def __init__(self):
+        self.engine_url = None
         self.Session = None
 
         self.queue = queue.PriorityQueue()
 
-    def init(self):
-        self.engine = create_engine(self.engine_url, echo=False)
-        self.Session = sessionmaker(bind=self.engine)
-
-        self.run()
-
-    def run(self):
+    def run(self, engine: create_engine, session: sessionmaker):
         """run"""
         continue_flag = True
+
+        self.engine = engine
+        self.Session = session
 
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind("/tmp/db_access_manager.sock")
@@ -53,7 +59,7 @@ class DbManager:
                     if not data:
                         break
                     else:
-                        db_queue: DbQueue = pickle.loads(data)
+                        db_queue: DbQueue = dill.loads(data)
                         if db_queue.require_result: # 結果が必要な場合はクライアントをキューに追加
                             db_queue.client = conn
                         else:
@@ -81,7 +87,7 @@ class DbManager:
                 logger.debug("this queue requires result.")
                 logger.debug("sending result...")
                 try: # Closeされていたりして失敗するかもしれないので
-                    queue.client.send(pickle.dumps(result))
+                    queue.client.send(dill.dumps(result))
                     queue.client.close()
                 except Exception as e:
                     logger.error(f"Failed to send result: {e}")

@@ -11,6 +11,7 @@ from .enums.job import *
 
 # DB Access Manager
 from .process.db_access_manager import *
+from .process.db_access_manager import init as db_manager_init
 
 # Debug
 from .job.debug_tw_mk import debug_tw_mk
@@ -18,7 +19,7 @@ from .debug.test_stub import ProcessTest
 from .debug.test_sock_serv import *
 
 # WebAPI server
-import uvicorn
+from uvicorn import run
 from .fastapi.app import app
 
 # Database
@@ -29,7 +30,9 @@ from .db_model.base import Base
 # Utils
 import pickle
 import uuid
-from multiprocessing import Pipe, Process, Value, Array
+#from multiprocessing import Pipe, Process, Value, Array
+# import multiprocess as multiprocess
+from .common.dill_multiprocessing import DillProcess
 import time
 import socket
 import os
@@ -55,8 +58,8 @@ def main():
     # time.sleep(2)
 
     # DB Access Manager のデバッグ
-    db_manager = DbManager(engine_url="sqlite:///./db.sqlite3")
-    Process(target=db_manager.init).start()
+
+    DillProcess(target=db_manager_init, kwargs={"engine_url": "sqlite:///./db.sqlite3"}).start()
 
     time.sleep(2)
 
@@ -66,7 +69,7 @@ def main():
 
     #uvicorn.run(app, host="172.16.30.1", port=55555)
 
-    Process(target=uvicorn.run, args=(app, ), kwargs=({"host":"localhost", "port":55555})).start()
+    DillProcess(target=run, args=(app, ), kwargs=({"host":"localhost", "port":55555})).run()
 
     time.sleep(2)
 
