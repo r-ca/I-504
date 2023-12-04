@@ -9,7 +9,7 @@ import dill
 import json
 import pickle
 
-def get_session():
+def get_session() -> Session:
     logger = Logger("get_session")
     conf = os.getenv("I504_SESSION_POOL_CONF")
     if conf is None:
