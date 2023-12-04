@@ -34,7 +34,6 @@ import pickle
 import uuid
 from multiprocessing import Pipe, Process, Value, Array
 from multiprocessing.connection import Connection
-# import multiprocess as multiprocess
 from .common.dill_multiprocessing import DillProcess
 import time
 import socket
