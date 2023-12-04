@@ -1,0 +1,9 @@
+## Twitter config
+
+# Twitter認証に使用する情報
+# TODO: DBに記録するように変更する？
+auth_cookie:
+  ct0: "ExampleExampleExampleExample"
+  auth_token: "ExampleExampleExampleExample"
+
+update_limit: 10

@@ -1,6 +1,6 @@
 ## Misskey config
 
-target_instance: "https://62ki.net"
+target_instance: "https://YourInstanceUrl.tld"
 token: "xxxxxxxxxxxxxxxxxxxxx"
 default_visibility: "home"
 
