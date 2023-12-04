@@ -32,6 +32,7 @@ from .db_model.base import Base
 import pickle
 import uuid
 from multiprocessing import Pipe, Process, Value, Array
+from multiprocessing.connection import Connection
 # import multiprocess as multiprocess
 from .common.dill_multiprocessing import DillProcess
 import time
@@ -49,15 +50,16 @@ def main():
     engine.dispose()
 
     # Session Pool Init
+    
+    pipe, child_pipe = Pipe()
     session_pool = SessionPool()
-    DillProcess(target=session_pool.init, kwargs={"engine_url": "sqlite:///./db.sqlite3"}).start()
+    DillProcess(target=session_pool.init, kwargs={"engine_url": "sqlite:///./db.sqlite3", "pipe": child_pipe}).start()
+    session_pool_conf = {
+        "socket_path": "/tmp/session_pool.sock",
+        "socket_listen": 5
+    }
+    session_pool_conf = ipc_init(pipe=pipe, socket_config=session_pool_conf)
 
-    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    client.connect("/tmp/session_pool.sock")
-
-    client.sendall("connection_test".encode("utf-8"))
-    client.recv(1024).decode("utf-8")
-    client.close()
 
     time.sleep(2)
 
@@ -133,6 +135,63 @@ def core_init():
     # Load Config
     config = YamlConfigLoader("./I-504/config/config.yml").load()
     logger.info("Loaded config")
+
+def ipc_init(pipe: Connection, socket_config: dict):
+    logger = main_logger.child("ipc_init")
+    logger.info("IPC Initializer started.")
+    # connection test
+    logger.info("Waiting ready message from parent process...")
+    res = pipe.recv()
+    if res == "ready":
+        logger.info("Received ready message from parent process")
+        pipe.send("ok")
+        logger.info("Sent ok message to target process")
+
+    logger.info("Waiting socket_config_req message from target process...")
+    res = pipe.recv()
+    if res == "socket_config_req":
+        logger.info("Received socket_config_req message from target process")
+        # Socketのconfigを送る
+        pipe.send(dill.dumps(socket_config))
+
+    logger.info("Waiting socket_config_ok message from target process...")
+    res = pipe.recv()
+    if res == "socket_config_ok":
+        logger.info("Received socket_config_ok message from target process")
+    else:
+        logger.error("Received unknown message from target process")
+        exit(1)
+
+    logger.info("Waiting socket_test_ready message from target process...")
+    res = pipe.recv()
+    if res == "socket_test_ready":
+        logger.info("Received socket_test_ready message from target process")
+        logger.debug("Trying to connect to target process (Config: {socket_config})".format(socket_config=socket_config))
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.connect(socket_config["socket_path"])
+        logger.info("Connected to target process")
+        logger.info("Sending ready message to target process...")
+        client.sendall("ready".encode("utf-8"))
+        logger.info("Waiting for response from target process...")
+        res = client.recv(1024).decode("utf-8")
+        if res == "ready":
+            logger.info("Received ready message from target process")
+            client.sendall("ok".encode("utf-8"))
+            logger.info("Sent ok message to target process")
+        else:
+            logger.error("Failed to connect to target process")
+            exit(1)
+
+    logger.succ("Socket IPC configured successfully!")
+
+    logger.debug("Closing socket and pipe connection...")
+
+    client.close()
+    pipe.close()
+
+    logger.succ("IPC Initializer finished.")
+
+    return socket_config
 
 def job_manager_init(engine_url="sqlite:///./db.sqlite3"):
     logger = main_logger.child("job_manager_init")

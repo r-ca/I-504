@@ -3,6 +3,8 @@ from sqlalchemy import create_engine
 
 from ..common.logger import Logger
 
+from .utils import *
+
 import time
 import socket
 import dill
@@ -14,17 +16,11 @@ class SessionPool:
         self.engine = None
         self.init_flag = False
 
-    def init(self, engine_url: str):
+    def init(self, engine_url: str, pipe: Connection):
         logger = sp_logger.child("init")
         logger.info("Session Pool Initializer started.")
 
-        # socket init
-        # TODO: テストする, configから読み取る
-        # Job Manager のInit実装を汎用化して切り出すべきかも
-
-        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        server.bind("/tmp/session_pool.sock")
-        server.listen(5)
+        server = ProcessUtils.configure_socket(pipe=pipe)
 
         self.engine = create_engine(engine_url, echo=False)
 
