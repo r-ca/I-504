@@ -190,24 +190,29 @@ class JobManager:
     def job_register(self, job_id: str, job: Job):
         logger = self.job_m_logger.child("job_register")
 
-        logger.debug("Job info")
-        logger.debug(f"Job ID: {job_id}")
-        logger.debug(f"Job name: {job.job_meta.job_name}")
-        logger.debug(f"Job description: {job.job_meta.job_desc}")
-        logger.debug(f"Job priority: {job.job_meta.priority}")
-        logger.debug(f"Job is repeat: {job.job_meta.is_repeat}")
-        logger.debug(f"Job can retry: {job.job_meta.can_retry}")
-        logger.debug(f"Job retry limit: {job.job_meta.retry_limit}")
-        logger.debug(f"Job retry interval: {job.job_meta.retry_interval.interval} {job.job_meta.retry_interval.unit}")
-        logger.debug(f"Job interval: {job.job_meta.job_interval.interval} {job.job_meta.job_interval.unit}")
-        logger.debug(f"Job has depend job: {job.job_meta.has_depend_job}")
-        logger.debug(f"Job depend: {job.job_meta.job_depend.depend_job_id if job.job_meta.has_depend_job else None}")
-        logger.debug(f"Job depend require mediator: {job.job_meta.job_depend.require_mediator if job.job_meta.has_depend_job else None}")
-        logger.debug(f"Job depend mediator func: {job.job_meta.job_depend.mediator_func if job.job_meta.has_depend_job else None}")
-        logger.debug(f"Job func: {pickle.loads(job.job_func)}")
-        logger.debug(f"Job args: {job.args}")
-        logger.debug(f"Job kwargs: {job.kwargs}")
-        logger.debug("Job info end")
+        # ログにジョブ情報を出力するかどうか
+        # (あまりに長いのでDebugでも出力したくない場合がある)
+        enable_job_info: bool = True
+
+        if enable_job_info:
+            logger.debug("Job info")
+            logger.debug(f"Job ID: {job_id}")
+            logger.debug(f"Job name: {job.job_meta.job_name}")
+            logger.debug(f"Job description: {job.job_meta.job_desc}")
+            logger.debug(f"Job priority: {job.job_meta.priority}")
+            logger.debug(f"Job is repeat: {job.job_meta.is_repeat}")
+            logger.debug(f"Job can retry: {job.job_meta.can_retry}")
+            logger.debug(f"Job retry limit: {job.job_meta.retry_limit}")
+            logger.debug(f"Job retry interval: {job.job_meta.retry_interval.interval} {job.job_meta.retry_interval.unit}")
+            logger.debug(f"Job interval: {job.job_meta.job_interval.interval} {job.job_meta.job_interval.unit}")
+            logger.debug(f"Job has depend job: {job.job_meta.has_depend_job}")
+            logger.debug(f"Job depend: {job.job_meta.job_depend.depend_job_id if job.job_meta.has_depend_job else None}")
+            logger.debug(f"Job depend require mediator: {job.job_meta.job_depend.require_mediator if job.job_meta.has_depend_job else None}")
+            logger.debug(f"Job depend mediator func: {job.job_meta.job_depend.mediator_func if job.job_meta.has_depend_job else None}")
+            logger.debug(f"Job func: {pickle.loads(job.job_func)}")
+            logger.debug(f"Job args: {job.args}")
+            logger.debug(f"Job kwargs: {job.kwargs}")
+            logger.debug("Job info end")
 
         # JobをDBに登録
 
@@ -230,12 +235,13 @@ class JobManager:
             depend_job_id=job.job_meta.job_depend.depend_job_id if job.job_meta.has_depend_job else None,
             require_mediator=job.job_meta.job_depend.require_mediator if job.job_meta.has_depend_job else None,
             mediator_func=job.job_meta.job_depend.mediator_func if job.job_meta.has_depend_job else None,
-            func=job.job_func, # pickle.dumpはDBに保存できない？ので
+            func=job.job_func, # 関数自体はDBに保存できない？ので
             args=json.dumps(job.args),
             kwargs=json.dumps(job.kwargs),
             # next_run=InternalUtils.calc_next_run_time(job.job_meta.job_interval)
         ))
 
+        # TODO: 切り出す
         # 実行キューに登録
         session.add(QueueModel(
             id=uuid.uuid4().__str__(),
@@ -268,7 +274,7 @@ class JobManager:
         pass # TODO
 
     def interval_executer(self, interval: int, pipe: Connection):
-        """引数で指定された間隔で関数を実行する"""
+        """キューの監視を行う関数を呼び出すプロセス"""
         logger = self.job_m_logger.child("interval_executer")
         logger.debug(f"Interval executer started. Interval: {interval} seconds.")
         schedule.every(interval).seconds.do(self.interval_exec)
@@ -284,7 +290,7 @@ class JobManager:
             time.sleep(0.5)
 
     def interval_exec(self):
-        """実行するジョブを取得して実行(定期実行される関数)"""
+        """実行するキューを取得して実行(定期実行される関数)"""
         logger = self.job_m_logger.child("interval_exec")
         queues = self.queue_check()
 
@@ -389,7 +395,7 @@ class InternalUtils:
 
 
     def get_job(session: Session, job_id: str):
-        """ジョブを取得する"""
+        """job_idからジョブを取得する"""
         job = session.query(JobModel).filter(JobModel.id == job_id).first()
 
         return job
