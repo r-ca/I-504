@@ -62,7 +62,7 @@ def main():
     os.environ["I504_SESSION_POOL_CONF"] = json.dumps(session_pool_conf)
 
     #DEBUG
-    session = dill.loads(get_session())
+    session = get_session()
     session.close()
 
 

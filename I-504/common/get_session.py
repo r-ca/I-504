@@ -24,6 +24,6 @@ def get_session():
     logger.debug("Waiting for response...")
     received = client.recv(4096)
     logger.debug("Received")
-    return received
+    return dill.loads(received)
 
 
