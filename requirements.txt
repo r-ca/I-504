@@ -1,1 +1,9 @@
-#TODO
+#WIP
+#TODO バージョン指定する
+
+# Requrements
+requests
+sqlalchemy
+fastapi
+uvicorn
+
