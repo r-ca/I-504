@@ -110,6 +110,26 @@ def ipc_init(pipe: Connection, socket_config: dict):
     res = pipe.recv()
     if res == "socket_config_ok":
         logger.info("Received socket_config_ok message from target process")
+    elif res == "socket_config_ng_48":
+        logger.warn("Received socket_config_ng_48 message from target process")
+        logger.warn("Trying to remove socket file...")
+        try:
+            os.remove(socket_config["socket_path"])
+            logger.succ("Removed socket file")
+            # 送り直す
+            logger.info("Sending socket config again...")
+            pipe.send(dill.dumps(socket_config))
+            if pipe.recv() == "socket_config_ok": # TODO: ネスト深すぎるのでなんとかする
+                logger.info("Received socket_config_ok message from target process")
+            else:
+                logger.error("Received unknown message from target process") # Fatal?
+                exit(1)
+        except Exception as e:
+            logger.error(f"Failed to remove socket file: {e}")
+            exit(1)
+    elif res == "socket_config_ng":
+        logger.error("Received socket_config_ng message from target process")
+        exit(1)
     else:
         logger.error("Received unknown message from target process")
         exit(1)

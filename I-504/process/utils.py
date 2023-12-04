@@ -52,15 +52,28 @@ class ProcessUtils:
                 server.bind(received["socket_path"])
                 server.listen(received["socket_listen"])
                 continue_flag = False
-            except Exception as e: #TODO: 失敗理由によって分岐
+            # エラーコードが48の場合はすでにsocketが存在している
+            except OSError as e:
+                if e.errno == 48:
+                    logger.error(f"Socket already exists: {e}")
+                    logger.debug("socket_config_req message send")
+                    pipe.send("socket_config_ng_48")
+                    # もう1度ループ
+                    continue
+                else:
+                    logger.error(f"Failed to bind socket: {e}")
+                    logger.debug("socket_config_ng message send")
+                    pipe.send("socket_config_ng")
+                    exit(1)
+            except Exception as e:
                 logger.error(f"Failed to bind socket: {e}")
-                pipe.send("bind_failed")
-                # もう1度ループ
-                continue
-
-        logger.succ("Socket bind succeeded!")
-        logger.debug("socket_config_ok message send")
-        pipe.send("socket_config_ok")
+                logger.debug("socket_config_ng message send")
+                pipe.send("socket_config_ng")
+                exit(1)
+            else:
+                logger.succ("Socket bind succeeded!")
+                logger.debug("socket_config_ok message send")
+                pipe.send("socket_config_ok")
 
         # Socket通信のテスト
         logger.info("Step3/4: Socket communication test.")
