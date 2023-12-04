@@ -260,6 +260,16 @@ class JobManager:
         else:
             logger.succ(f"Job registered. ID: {job_id}, Name: {job.job_meta.job_name}")
 
+    def queue_db_register(self, queue: QueueModel):
+        """キューをデータベースに登録する"""
+        logger = self.job_m_logger.child("queue_register")
+        logger.debug(f"Registering queue. ID: {queue.id}")
+        session: Session = self.Session()
+        session.add(queue)
+        session.commit()
+        logger.succ(f"Queue registered. ID: {queue.id}")
+        session.close()
+
     def job_unregister(self, job_id: str):
         """ジョブの登録解除"""
         logger = self.job_m_logger.child("job_unregister")
